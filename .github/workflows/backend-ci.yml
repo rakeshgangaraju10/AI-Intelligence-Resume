@@ -50,5 +50,8 @@ jobs:
       - name: Migrations are up to date
         run: python manage.py makemigrations --check --dry-run
 
+      - name: OpenAPI schema generates without warnings
+        run: python manage.py spectacular --fail-on-warn --file /tmp/schema.yml
+
       - name: Run tests
         run: pytest --cov=apps --cov-report=term-missing

@@ -4,7 +4,7 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status: Stage 1 of 8 (backend foundation).** What exists today is listed
+> **Status: Stage 1 of 8 (backend foundation), awaiting first verified test run (Stage 2).** What exists today is listed
 > below. Nothing in later stages is implemented yet, and nothing has been deployed.
 
 ## What works in Stage 1
@@ -94,6 +94,19 @@ python manage.py makemigrations --check --dry-run   # expect: "No changes detect
 pytest
 python manage.py runserver
 ```
+
+### One-command verification (Docker)
+
+```bash
+bash scripts/verify_backend.sh      # macOS/Linux, or Git Bash / WSL on Windows
+```
+
+This builds the image, starts PostgreSQL, and runs: package listing,
+`pip freeze > backend/requirements.lock`, `manage.py check`, the production
+`check --deploy`, `makemigrations --check`, `migrate`, OpenAPI generation with
+`--fail-on-warn`, the full pytest suite with coverage, and (if `curl` and
+`python3` exist on the host) the API smoke test. Everything is written to
+`verify-report.txt` with a PASS/FAIL summary at the end.
 
 ### Verify the milestone manually
 
