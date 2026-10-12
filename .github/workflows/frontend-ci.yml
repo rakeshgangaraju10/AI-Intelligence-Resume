@@ -1,0 +1,89 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+  pull_request:
+    paths: ["frontend/**", ".github/workflows/frontend-ci.yml"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      # No lockfile is committed yet (see README); `npm install` resolves the
+      # semver ranges in package.json. The resolved versions are printed in the
+      # run summary so they can be pinned later.
+      - name: Install dependencies
+        id: install
+        run: |
+          set -o pipefail
+          npm install --no-audit --no-fund 2>&1 | tee install-output.txt
+
+      - name: Type check
+        id: typecheck
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          npm run typecheck 2>&1 | tee typecheck-output.txt
+
+      - name: Unit and component tests
+        id: tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          npx vitest run --reporter=default 2>&1 | tee test-output.txt
+
+      - name: Production build
+        id: build
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          npx vite build 2>&1 | tee build-output.txt
+
+      - name: Publish summary
+        if: always()
+        env:
+          INSTALL_OUTCOME: ${{ steps.install.outcome }}
+          TYPECHECK_OUTCOME: ${{ steps.typecheck.outcome }}
+          TESTS_OUTCOME: ${{ steps.tests.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          {
+            echo "## Frontend checks"
+            echo "| Step | Result |"
+            echo "|---|---|"
+            echo "| Install | ${INSTALL_OUTCOME} |"
+            echo "| Type check | ${TYPECHECK_OUTCOME} |"
+            echo "| Tests | ${TESTS_OUTCOME} |"
+            echo "| Build | ${BUILD_OUTCOME} |"
+            for pair in "install:$INSTALL_OUTCOME" "typecheck:$TYPECHECK_OUTCOME" "test:$TESTS_OUTCOME" "build:$BUILD_OUTCOME"; do
+              name="${pair%%:*}"; outcome="${pair#*:}"
+              if [ "$outcome" = "failure" ] && [ -s "$name-output.txt" ]; then
+                echo "### Failed: $name"
+                echo '```'
+                tail -n 60 "$name-output.txt"
+                echo '```'
+              fi
+            done
+            if [ -s test-output.txt ]; then
+              echo "### Test results"
+              echo '```'
+              grep -E "Test Files|Tests " test-output.txt | tail -n 2 || true
+              echo '```'
+            fi
+            echo "### Resolved dependency versions"
+            echo '```'
+            npm ls --depth=0 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

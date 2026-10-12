@@ -1,4 +1,4 @@
-# API documentation (Stages 1–5)
+# API documentation (Stages 1–6)
 
 Base path: `/api/v1/`. Only endpoints listed here exist. The live OpenAPI schema
 is served at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`.
@@ -43,6 +43,9 @@ Unauthenticated requests to protected endpoints return **403** with code `not_au
 | POST | `/auth/login/` | `{email, password}` | `200` user; session started |
 | POST | `/auth/logout/` | — | `204` |
 | GET | `/auth/me/` | — | `200 {id, email, full_name, date_joined}` |
+| PATCH | `/auth/me/` | `{full_name}` | `200` user (email is not editable) |
+| DELETE | `/auth/me/` | `{password}` | `204`; deletes the account and everything it owns (resumes + files, jobs, analyses) and logs out. Wrong password → `wrong_password`. |
+| POST | `/auth/change-password/` | `{current_password, new_password}` | `204`; the current session stays valid, other sessions are invalidated. Codes: `wrong_password`, `password_unchanged`, password-validator messages. Throttled like login. |
 
 Register/login are throttled (`THROTTLE_AUTH_RATE`, default `10/minute` per IP).
 Validation codes: `email_taken`, password-validator messages, `invalid_credentials`.

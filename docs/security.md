@@ -25,6 +25,17 @@ Status of each control as of Stage 1. "Tested" means a pytest test exercises it.
 | CORS limited to `CORS_ALLOWED_ORIGINS` | settings | — |
 | Production: HTTPS redirect, HSTS, secure cookies, nosniff, `X-Frame-Options: DENY` | `settings/production.py` | — |
 
+## Frontend and account controls (Stage 6)
+
+| Control | Where |
+|---|---|
+| No auth tokens in localStorage/sessionStorage; session id stays in an HttpOnly cookie | `frontend/src/services/api.ts` |
+| CSRF header on every unsafe request; CSRF cookie fetched first when missing | `api.ts` interceptor |
+| Protected routes redirect to login; the API still enforces auth and ownership on every call | `RouteGuards.tsx` |
+| Errors shown to users come from the API's safe error envelope; raw/HTML error bodies are never rendered | `toApiError()` (tested) |
+| Password change keeps the current session and invalidates others (`update_session_auth_hash`) | `ChangePasswordView` (tested) |
+| Account deletion requires the current password and removes all owned data and files | `MeView.delete` (tested) |
+
 ## Known gaps (tracked for later stages)
 
 - **Throttle storage**: LocMem cache is per process. Production with several

@@ -130,3 +130,74 @@ class TestCsrf:
         client.force_login(user)
         response = client.post(LOGOUT)
         assert response.status_code == 403
+
+
+class TestAccountSettings:
+    CHANGE = reverse("auth-change-password")
+
+    def test_update_full_name(self, user):
+        client = APIClient()
+        client.force_login(user)
+        response = client.patch(ME, {"full_name": "  Alex Q. Example  ", "email": "hacker@example.com"})
+        assert response.status_code == 200
+        assert response.json()["full_name"] == "Alex Q. Example"
+        user.refresh_from_db()
+        assert user.email == "alex@example.com"  # email is not editable here
+        assert client.patch(ME, {"full_name": "   "}).status_code == 400
+
+    def test_change_password_keeps_current_session(self, api_client, user):
+        api_client.post(LOGIN, {"email": user.email, "password": TEST_PASSWORD})
+        new_password = "Brand-New-Passphrase-77"
+        response = api_client.post(self.CHANGE, {"current_password": TEST_PASSWORD, "new_password": new_password})
+        assert response.status_code == 204
+        assert api_client.get(ME).status_code == 200  # still logged in
+        user.refresh_from_db()
+        assert user.check_password(new_password)
+
+        other = APIClient()
+        assert other.post(LOGIN, {"email": user.email, "password": TEST_PASSWORD}).status_code == 400
+        assert other.post(LOGIN, {"email": user.email, "password": new_password}).status_code == 200
+
+    @pytest.mark.parametrize(
+        ("payload", "field", "code"),
+        [
+            ({"current_password": "wrong-one-123", "new_password": "Brand-New-Passphrase-77"}, "current_password", "wrong_password"),
+            ({"current_password": TEST_PASSWORD, "new_password": TEST_PASSWORD}, "new_password", "password_unchanged"),
+            ({"current_password": TEST_PASSWORD, "new_password": "short"}, "new_password", None),
+        ],
+    )
+    def test_change_password_validation(self, user, payload, field, code):
+        client = APIClient()
+        client.force_login(user)
+        response = client.post(self.CHANGE, payload)
+        assert response.status_code == 400
+        errors = response.json()["error"]["fields"][field]
+        if code:
+            assert errors[0]["code"] == code
+        user.refresh_from_db()
+        assert user.check_password(TEST_PASSWORD)
+
+    def test_delete_account_requires_password_and_removes_data(self, user, django_capture_on_commit_callbacks):
+        from apps.resumes.models import Resume
+
+        from .conftest import pdf_upload
+
+        client = APIClient()
+        client.force_login(user)
+        client.post(reverse("resume-list"), {"file": pdf_upload()}, format="multipart")
+        assert Resume.objects.filter(owner=user).count() == 1
+
+        assert client.delete(ME, {"password": "wrong-password-123"}).status_code == 400
+        assert User.objects.filter(pk=user.pk).exists()
+
+        with django_capture_on_commit_callbacks(execute=True):
+            response = client.delete(ME, {"password": TEST_PASSWORD})
+        assert response.status_code == 204
+        assert not User.objects.filter(pk=user.pk).exists()
+        assert not Resume.objects.filter(owner_id=user.pk).exists()
+        assert client.get(ME).status_code == 403  # logged out
+
+    def test_settings_endpoints_require_authentication(self, api_client):
+        assert api_client.patch(ME, {"full_name": "x"}).status_code == 403
+        assert api_client.post(self.CHANGE, {}).status_code == 403
+        assert api_client.delete(ME, {"password": "x"}).status_code == 403

@@ -1,4 +1,4 @@
-# Architecture (Stages 1–5)
+# Architecture (Stages 1–6)
 
 ## Components
 
@@ -108,3 +108,27 @@ skills.SkillGroup *──* skills.Skill            (curated related-skill famili
   resume or job is edited later. Score has a 0–100 check constraint.
 * Deleting a resume or job deletes its analyses (CASCADE); deleting a user deletes everything.
 * The matching engine is pure Python; see [matching-algorithm.md](matching-algorithm.md).
+
+## Frontend (Stage 6)
+
+```
+src/
+  main.tsx            BrowserRouter + AuthProvider
+  App.tsx             routes: public (landing, login, register) and protected (/dashboard, /resumes…, /jobs…, /analyses…, /settings)
+  services/api.ts     axios instance: baseURL /api/v1, withCredentials, X-CSRFToken from the csrftoken cookie,
+                      interceptor fetches the CSRF cookie before the first unsafe request,
+                      toApiError() turns any failure into ApiError {status, code, message, fields}
+  services/*.ts       one typed function per endpoint (no API calls inside presentational components)
+  features/auth       AuthContext (current user from GET /auth/me/), ProtectedRoute / PublicOnlyRoute
+  features/resumes    ProfileEditor, SkillsEditor, EntrySectionEditor (config-driven CRUD for 4 sections), dropzone
+  features/analyses   score badge, skill result list with evidence
+  hooks/useApiData    loading / error / reload state with stale-response protection
+```
+
+| Decision | Reason |
+|---|---|
+| Session cookie + CSRF, same origin via Vite proxy (dev) / reverse proxy (prod) | No tokens in JavaScript-readable storage; no cross-site cookie configuration. |
+| Server is the source of truth for validation | Client checks (file type/size, required fields) only improve UX; every rule is re-checked by DRF and server field errors are shown next to the field. |
+| Config-driven section editor | Education, experience, projects and certifications share one tested component instead of four near-identical ones. |
+| Provenance always visible | "Detected · please review", "Confirmed" and "Added by you" badges mirror `source` / `is_verified`. |
+| Accessibility | Labelled inputs with `aria-invalid` / `aria-describedby`, visible focus, skip link, keyboard-operable dropzone, `role="alert"` for errors, progress bars with ARIA values, page titles per route. |

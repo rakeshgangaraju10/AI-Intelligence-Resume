@@ -65,3 +65,45 @@ class LoginSerializer(serializers.Serializer):
             )
         attrs["user"] = user
         return attrs
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["full_name"]
+
+    def validate_full_name(self, value: str) -> str:
+        if not value.strip():
+            raise serializers.ValidationError("Name cannot be blank.", code="blank")
+        return value.strip()
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True, trim_whitespace=False)
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
+
+    def validate_current_password(self, value: str) -> str:
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("Current password is incorrect.", code="wrong_password")
+        return value
+
+    def validate(self, attrs: dict) -> dict:
+        user = self.context["request"].user
+        if attrs["new_password"] == attrs["current_password"]:
+            raise serializers.ValidationError(
+                {"new_password": [serializers.ErrorDetail("Choose a different password.", code="password_unchanged")]}
+            )
+        try:
+            password_validation.validate_password(attrs["new_password"], user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"new_password": list(exc.messages)}) from exc
+        return attrs
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_password(self, value: str) -> str:
+        if not self.context["request"].user.check_password(value):
+            raise serializers.ValidationError("Password is incorrect.", code="wrong_password")
+        return value

@@ -1,0 +1,78 @@
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { Link, useLocation, useNavigate } from "react-router";
+
+import { Button } from "../components/ui/Button";
+import { Alert } from "../components/ui/Feedback";
+import { TextField } from "../components/ui/Field";
+import { useAuth } from "../features/auth/AuthContext";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { applyServerErrors } from "../lib/forms";
+
+interface LoginForm {
+  email: string;
+  password: string;
+}
+
+export function LoginPage() {
+  useDocumentTitle("Log in");
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [formError, setFormError] = useState<string | null>(null);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginForm>();
+
+  const from = (location.state as { from?: string } | null)?.from ?? "/dashboard";
+
+  async function onSubmit(values: LoginForm) {
+    setFormError(null);
+    try {
+      await login(values.email.trim(), values.password);
+      navigate(from, { replace: true });
+    } catch (err) {
+      setFormError(applyServerErrors(err, setError, ["email", "password"]));
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-md px-4 py-16">
+      <h1 className="text-2xl font-bold text-slate-900">Log in</h1>
+      <p className="mt-1 text-sm text-slate-600">
+        New here?{" "}
+        <Link to="/register" className="font-medium text-indigo-700 underline">
+          Create an account
+        </Link>
+      </p>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="mt-6 space-y-4 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        {formError && <Alert tone="error">{formError}</Alert>}
+        <TextField
+          label="Email"
+          type="email"
+          autoComplete="email"
+          required
+          error={errors.email?.message}
+          {...register("email", {
+            required: "Enter your email address.",
+            pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address." },
+          })}
+        />
+        <TextField
+          label="Password"
+          type="password"
+          autoComplete="current-password"
+          required
+          error={errors.password?.message}
+          {...register("password", { required: "Enter your password." })}
+        />
+        <Button type="submit" className="w-full" loading={isSubmitting}>
+          Log in
+        </Button>
+      </form>
+    </div>
+  );
+}

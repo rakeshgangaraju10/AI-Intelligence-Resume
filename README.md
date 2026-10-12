@@ -4,14 +4,14 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status: backend Stages 1–5 built. Stages 1–4 verified in CI (127 tests, 96% coverage); Stage 5 awaiting its first CI run.** What exists today is listed
-> below. Nothing in later stages is implemented yet, and nothing has been deployed.
+> **Status:** backend Stages 1–5 verified in CI (172 tests, 96% coverage, run #4).
+> Stage 6 (React frontend) built; awaiting its first CI run. Nothing has been deployed.
 
-## What works in Stage 1
+## What's implemented
 
 | Area | Implemented |
 |---|---|
-| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth |
+| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth; profile update, password change, account deletion |
 | Resume upload | `POST /api/v1/resumes/` (multipart) with extension, content-type, size and `%PDF-` signature checks |
 | Text extraction | PyMuPDF; rejects corrupt, password-protected, scanned (no text layer), too-many-pages and oversized-text PDFs with specific error codes |
 | Storage | Private directory, server-generated filenames, no public URL, file removed when the resume or user is deleted |
@@ -21,16 +21,18 @@ deterministic matching score.
 | Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing |
 | Matching (Stage 5) | Deterministic weighted score (0–100) with matched / missing / related skills, resume evidence, per-skill explanations, strengths, improvements and suggestions; results stored as history |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |
-| Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), GitHub Actions CI on PostgreSQL |
+| Frontend (Stage 6) | React + TypeScript SPA: landing, register/login, dashboard, drag-and-drop upload with progress, resume review/editing, job descriptions with weighted skills, analysis results with evidence, history, settings |
+| Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), Vitest + Testing Library component tests, GitHub Actions CI for both |
 
-Not yet built: React frontend (Stage 6), analysis comparison/report export
-(Stage 7), production deploy (Stage 8), optional semantic matching.
+Not yet built: side-by-side analysis comparison and report export (Stage 7),
+production deployment (Stage 8), optional semantic matching.
 
 ## Tech stack
 
 Python 3.12 · Django 5.2 LTS · Django REST Framework 3.16 · PostgreSQL 16 ·
 PyMuPDF · drf-spectacular · pytest · Docker Compose · GitHub Actions.
-Frontend (React + TypeScript + Vite + Tailwind) arrives in Stage 6.
+Frontend: React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 ·
+React Hook Form · Axios · Vitest + Testing Library.
 
 ## Repository layout
 
@@ -51,6 +53,16 @@ careerforge/
 │   ├── tests/                  # pytest suite + synthetic PDF factory
 │   ├── requirements.txt / requirements-dev.txt
 │   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── components/         # ui/ (buttons, fields, alerts…) and layout/
+│   │   ├── pages/              # one component per route
+│   │   ├── features/           # auth, resumes, analyses building blocks
+│   │   ├── services/           # typed API client (axios, CSRF, error normalisation)
+│   │   ├── hooks/ lib/ types/  # data loading, helpers, API types
+│   │   └── test/               # Vitest setup + render helpers
+│   ├── package.json
+│   └── vite.config.ts          # dev proxy /api -> Django, test config
 ├── docs/                       # architecture, API, security notes
 ├── scripts/                    # sample PDF generator, API smoke test
 ├── .github/workflows/          # CI
@@ -103,6 +115,21 @@ python manage.py makemigrations --check --dry-run   # expect: "No changes detect
 pytest
 python manage.py runserver
 ```
+
+### Frontend (Node 20.19+ or 22)
+
+```bash
+cd frontend
+npm install            # first run creates package-lock.json: commit it
+npm run dev            # http://localhost:5173 (proxies /api to http://localhost:8000)
+npm test               # Vitest component and unit tests
+npm run build          # type check + production build into frontend/dist
+```
+
+Run the backend at the same time (Docker Compose or `python manage.py runserver`).
+The dev server proxies `/api` to Django, so the browser sees a single origin and
+the session/CSRF cookies work without cross-site settings. Keep
+`CSRF_TRUSTED_ORIGINS=http://localhost:5173` in `.env`.
 
 ### One-command verification (Docker)
 
