@@ -4,7 +4,7 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status: Stages 1 and 4 code complete (backend); awaiting the first verified test run (Stage 2).** What exists today is listed
+> **Status: backend Stages 1–5 built. Stages 1–4 verified in CI (127 tests, 96% coverage); Stage 5 awaiting its first CI run.** What exists today is listed
 > below. Nothing in later stages is implemented yet, and nothing has been deployed.
 
 ## What works in Stage 1
@@ -18,11 +18,13 @@ deterministic matching score.
 | Resume API | List (paginated), retrieve, delete — scoped to the owner (other users get 404) |
 | Structured parsing (Stage 4) | Rule-based section, contact, skill, education, experience, project and certification extraction; 115-skill dictionary with aliases; evidence for every detected skill |
 | Review & editing (Stage 4) | Extraction endpoint, CRUD per section, profile editing, re-parse that preserves user edits, parser vs user provenance |
+| Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing |
+| Matching (Stage 5) | Deterministic weighted score (0–100) with matched / missing / related skills, resume evidence, per-skill explanations, strengths, improvements and suggestions; results stored as history |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |
 | Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), GitHub Actions CI on PostgreSQL |
 
-Not yet built: job descriptions and matching (Stage 5), React frontend
-(Stage 6), history/compare (Stage 7), production deploy (Stage 8).
+Not yet built: React frontend (Stage 6), analysis comparison/report export
+(Stage 7), production deploy (Stage 8), optional semantic matching.
 
 ## Tech stack
 
@@ -39,7 +41,9 @@ careerforge/
 │   ├── apps/
 │   │   ├── core/               # health check, error envelope, pagination
 │   │   ├── accounts/           # custom User + session auth endpoints
-│   │   ├── skills/             # skill dictionary (models, seed data, matcher)
+│   │   ├── skills/             # skill dictionary, aliases, related-skill groups
+│   │   ├── jobs/               # job descriptions, requirements, JD skill suggestions
+│   │   ├── analyses/           # matching engine + stored analyses
 │   │   └── resumes/            # Resume model, private storage, upload API
 │   │       └── services/       # pdf_validation.py, pdf_parser.py, resume_ingestion.py,
 │   │           │               # resume_parsing.py
@@ -140,3 +144,4 @@ reason). No `LICENSE` file is committed until you choose.
 - [docs/architecture.md](docs/architecture.md) — components, request flow, design decisions
 - [docs/api-documentation.md](docs/api-documentation.md) — every implemented endpoint
 - [docs/security.md](docs/security.md) — implemented controls and known gaps
+- [docs/matching-algorithm.md](docs/matching-algorithm.md) — scoring formula, worked example, limitations

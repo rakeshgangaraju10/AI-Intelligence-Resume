@@ -1,4 +1,4 @@
-# API documentation (Stages 1–4)
+# API documentation (Stages 1–5)
 
 Base path: `/api/v1/`. Only endpoints listed here exist. The live OpenAPI schema
 is served at `/api/v1/schema/` and Swagger UI at `/api/v1/docs/`.
@@ -130,3 +130,57 @@ the parser never invents a day or month.
 `projects_unstructured`, `email_not_found`, `name_not_found`.
 If the parser itself fails, the upload still succeeds with
 `status="text_extracted"` and `error_code="parse_failed"`.
+
+### Job descriptions (Stage 5)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/jobs/` | `title` (required), `company`, `experience_level` (`unspecified`, `internship`, `entry`, `mid`, `senior`), `description` (≤20,000 chars), `required_skills[]`, `preferred_skills[]`, `auto_extract` (default `true`). Needs a description or at least one skill (`empty_job`). |
+| GET | `/jobs/` | Paginated; includes `required_count`, `preferred_count`. `?search=` filters title/company. |
+| GET / PATCH / DELETE | `/jobs/{id}/` | Detail includes `requirements`. Deleting a job deletes its analyses. |
+| POST | `/jobs/{id}/suggest-requirements/` | Adds skills found in the description that aren't listed yet; never removes or edits existing ones. Returns `{added, job}`. |
+| GET / POST | `/jobs/{id}/requirements/` | `{name, kind, weight}`; names are canonicalised (`k8s` → `Kubernetes`); duplicates → `duplicate_skill`. |
+| GET / PATCH / DELETE | `/jobs/{id}/requirements/{req_id}/` | |
+
+Skill list items are either a string (`"Docker"`) or `{"name": "Docker", "weight": 3}`;
+weights are integers 1–5 (`invalid_weight`). A skill given as both required and
+preferred is stored as required. Suggested requirements have `source="extracted"`
+and `evidence` (the description line).
+
+### Analyses (Stage 5)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/analyses/` | `{"resume": "<uuid>", "job": <id>}`. Both must be yours (`does_not_exist` otherwise). A job with no skills → `no_requirements`. `201` → detail. |
+| GET | `/analyses/` | Paginated history: `score`, coverages, `matched_count`, `missing_count`, snapshot titles. Filters: `?resume=<uuid>`, `?job=<id>`. |
+| GET / DELETE | `/analyses/{id}/` | |
+
+Detail object (abridged):
+
+```json
+{
+  "id": 12, "resume": "4f0c…", "job": 7,
+  "resume_title": "Backend v2", "job_title": "Backend Intern @ Acme",
+  "score": 58.0,
+  "score_label": "Resume-to-job matching score: … It is not a probability of being hired.",
+  "required_coverage": 60.0, "preferred_coverage": 50.0, "required_share": 0.8,
+  "algorithm_version": "baseline-v1",
+  "breakdown": {"formula": "0.80 × required coverage (60.0) + 0.20 × preferred coverage (50.0)",
+                "required": {"matched_weight": 3, "total_weight": 5, "coverage": 60.0},
+                "preferred": {"matched_weight": 1, "total_weight": 2, "coverage": 50.0},
+                "required_share": 0.8, "related_skills_count_toward_score": false},
+  "strengths": ["Django: demonstrated in Project: Inventory Tracker — \"built a Django API…\""],
+  "improvements": ["Missing required skill: Docker"],
+  "suggestions": ["Docker: if you have real experience with it, add it …"],
+  "skill_results": [
+    {"skill_name": "MySQL", "kind": "required", "weight": 1, "status": "related",
+     "evidence": [{"location": "Skills section", "text": "Python, …, PostgreSQL, …"}],
+     "related_to": ["PostgreSQL"], "related_reason": "relational SQL databases",
+     "explanation": "Required skill 'MySQL' was not found. Your resume lists PostgreSQL (relational SQL databases). Related skills are shown for context and do not add to the score."}
+  ],
+  "created_at": "2026-10-12T07:00:00Z"
+}
+```
+
+`status` is `matched`, `missing` or `related`. The algorithm is documented in
+[matching-algorithm.md](matching-algorithm.md).

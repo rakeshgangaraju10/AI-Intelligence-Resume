@@ -50,3 +50,22 @@ class SkillAlias(models.Model):
 
     def __str__(self) -> str:
         return f"{self.alias} -> {self.skill.name}"
+
+
+class SkillGroup(models.Model):
+    """
+    A curated family of related skills (e.g. "Relational databases": PostgreSQL,
+    MySQL, SQLite). Two skills are "related" only if an admin put them in the
+    same group; the label is shown to users as the reason. Related skills are
+    displayed as context in an analysis and never count toward the score.
+    """
+
+    name = models.CharField(max_length=100, unique=True)
+    description = models.CharField(max_length=200, help_text="Shown to users, e.g. 'relational databases'.")
+    skills = models.ManyToManyField(Skill, related_name="groups")
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self) -> str:
+        return self.name

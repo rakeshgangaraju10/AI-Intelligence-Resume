@@ -1,5 +1,5 @@
 from .dictionary import AliasEntry, SkillDictionary
-from .models import Skill, SkillAlias
+from .models import Skill, SkillAlias, SkillGroup
 
 
 def load_skill_dictionary() -> SkillDictionary:
@@ -19,3 +19,11 @@ def load_skill_dictionary() -> SkillDictionary:
         if name.lower() not in covered
     ]
     return SkillDictionary(entries)
+
+
+def load_skill_groups() -> list[tuple[str, frozenset[str]]]:
+    """[(description, {skill names})] for related-skill explanations."""
+    return [
+        (group.description, frozenset(s.name for s in group.skills.all()))
+        for group in SkillGroup.objects.prefetch_related("skills")
+    ]

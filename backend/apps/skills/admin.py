@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Skill, SkillAlias
+from .models import Skill, SkillAlias, SkillGroup
 
 
 class SkillAliasInline(admin.TabularInline):
@@ -33,3 +33,10 @@ class SkillAliasAdmin(admin.ModelAdmin):
     search_fields = ["alias", "skill__name"]
     list_select_related = ["skill"]
     autocomplete_fields = ["skill"]
+
+
+@admin.register(SkillGroup)
+class SkillGroupAdmin(admin.ModelAdmin):
+    list_display = ["name", "description"]
+    search_fields = ["name", "skills__name"]
+    filter_horizontal = ["skills"]

@@ -1,0 +1,177 @@
+[
+ {
+  "name": "Relational databases",
+  "description": "relational SQL databases",
+  "skills": [
+   "PostgreSQL",
+   "MySQL",
+   "SQLite",
+   "Microsoft SQL Server",
+   "Oracle Database"
+  ]
+ },
+ {
+  "name": "NoSQL databases",
+  "description": "NoSQL data stores",
+  "skills": [
+   "MongoDB",
+   "DynamoDB",
+   "Firebase",
+   "Redis",
+   "Elasticsearch"
+  ]
+ },
+ {
+  "name": "Python web frameworks",
+  "description": "Python web frameworks",
+  "skills": [
+   "Django",
+   "Flask",
+   "FastAPI"
+  ]
+ },
+ {
+  "name": "JavaScript backends",
+  "description": "Node.js backend tools",
+  "skills": [
+   "Node.js",
+   "Express.js"
+  ]
+ },
+ {
+  "name": "Java backends",
+  "description": "Java backend frameworks",
+  "skills": [
+   "Spring Boot",
+   "Spring"
+  ]
+ },
+ {
+  "name": "Frontend frameworks",
+  "description": "JavaScript UI frameworks",
+  "skills": [
+   "React",
+   "Angular",
+   "Vue.js",
+   "Next.js"
+  ]
+ },
+ {
+  "name": "JavaScript and TypeScript",
+  "description": "JavaScript-family languages",
+  "skills": [
+   "JavaScript",
+   "TypeScript"
+  ]
+ },
+ {
+  "name": "CSS frameworks",
+  "description": "CSS frameworks",
+  "skills": [
+   "Tailwind CSS",
+   "Bootstrap"
+  ]
+ },
+ {
+  "name": "Cloud platforms",
+  "description": "public cloud platforms",
+  "skills": [
+   "AWS",
+   "Microsoft Azure",
+   "Google Cloud Platform"
+  ]
+ },
+ {
+  "name": "Containers",
+  "description": "container tooling",
+  "skills": [
+   "Docker",
+   "Docker Compose",
+   "Kubernetes"
+  ]
+ },
+ {
+  "name": "CI/CD tools",
+  "description": "CI/CD tooling",
+  "skills": [
+   "CI/CD",
+   "GitHub Actions",
+   "Jenkins"
+  ]
+ },
+ {
+  "name": "Version control",
+  "description": "version control tools",
+  "skills": [
+   "Git",
+   "GitHub",
+   "GitLab"
+  ]
+ },
+ {
+  "name": "Deep learning frameworks",
+  "description": "deep learning frameworks",
+  "skills": [
+   "TensorFlow",
+   "PyTorch",
+   "Keras"
+  ]
+ },
+ {
+  "name": "NLP libraries",
+  "description": "NLP tooling",
+  "skills": [
+   "Natural Language Processing",
+   "spaCy",
+   "NLTK",
+   "Hugging Face Transformers"
+  ]
+ },
+ {
+  "name": "Python data stack",
+  "description": "Python data libraries",
+  "skills": [
+   "Pandas",
+   "NumPy",
+   "Matplotlib",
+   "scikit-learn"
+  ]
+ },
+ {
+  "name": "BI tools",
+  "description": "BI and reporting tools",
+  "skills": [
+   "Power BI",
+   "Tableau",
+   "Microsoft Excel"
+  ]
+ },
+ {
+  "name": "Browser testing",
+  "description": "browser/end-to-end testing tools",
+  "skills": [
+   "Selenium",
+   "Playwright",
+   "Cypress"
+  ]
+ },
+ {
+  "name": "Unit testing",
+  "description": "unit-testing tools",
+  "skills": [
+   "pytest",
+   "Unit Testing",
+   "Jest",
+   "JUnit"
+  ]
+ },
+ {
+  "name": "API styles",
+  "description": "API design approaches",
+  "skills": [
+   "REST APIs",
+   "GraphQL",
+   "gRPC"
+  ]
+ }
+]

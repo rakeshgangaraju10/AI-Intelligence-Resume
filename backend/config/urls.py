@@ -5,7 +5,9 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 api_v1 = [
     path("", include("apps.core.urls")),
     path("auth/", include("apps.accounts.urls")),
-    path("", include("apps.resumes.urls")),  # router registers the "resumes/" prefix
+    path("", include("apps.resumes.urls")),  # routers register their own prefixes
+    path("", include("apps.jobs.urls")),
+    path("", include("apps.analyses.urls")),
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]

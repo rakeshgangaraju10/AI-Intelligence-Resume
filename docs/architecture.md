@@ -1,4 +1,4 @@
-# Architecture (Stages 1–4)
+# Architecture (Stages 1–5)
 
 ## Components
 
@@ -10,6 +10,8 @@ Django + DRF  (/api/v1/)
    ├── core       health check, error envelope, pagination
    ├── accounts   User model, session auth endpoints
    ├── skills     Skill + SkillAlias dictionary (seeded by migration, edited in admin)
+   ├── jobs       JobDescription + JobRequirement; jd_extractor suggests required/preferred skills
+   ├── analyses   matching.py (pure engine) ◄── analysis_service.py (gathers evidence, stores results)
    └── resumes    ResumeViewSet ──► ResumeUploadSerializer
                                      └─► services/resume_ingestion.py
                                           ├─ pdf_validation.py  (name, type, size, signature)
@@ -88,3 +90,21 @@ Every list entry shares `source`, `is_verified`, `position`, timestamps (abstrac
 Relational tables (rather than one JSON blob) give per-entry validation,
 editing and ownership checks, and let Stage 5 join resume skills to job
 requirements in SQL.
+
+## Data model additions (Stage 5)
+
+```
+User 1──* JobDescription 1──* JobRequirement ──* skills.Skill (nullable for custom skills)
+User 1──* Analysis *──1 Resume
+          Analysis *──1 JobDescription
+          Analysis 1──* AnalysisSkillResult   (status matched | missing | related, evidence JSON, explanation)
+skills.SkillGroup *──* skills.Skill            (curated related-skill families)
+```
+
+* `JobRequirement`: unique `(job, lower(name))`, `weight` 1–5 enforced by validators
+  and a DB check constraint.
+* `Analysis` stores score, coverages, settings used, algorithm version, feedback and
+  title snapshots, a deliberate denormalisation so history doesn't change when the
+  resume or job is edited later. Score has a 0–100 check constraint.
+* Deleting a resume or job deletes its analyses (CASCADE); deleting a user deletes everything.
+* The matching engine is pure Python; see [matching-algorithm.md](matching-algorithm.md).

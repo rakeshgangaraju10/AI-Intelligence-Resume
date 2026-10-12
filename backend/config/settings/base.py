@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "apps.accounts",
     "apps.skills",
     "apps.resumes",
+    "apps.jobs",
+    "apps.analyses",
 ]
 
 MIDDLEWARE = [
@@ -128,6 +130,11 @@ RESUME_MAX_TEXT_CHARS = env.int("RESUME_MAX_TEXT_CHARS", default=200_000)
 # (e.g. nginx client_max_body_size) so oversized bodies never reach Django.
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 
+# --- Matching engine -------------------------------------------------------------
+# Share of the score that comes from required skills when a job also lists
+# preferred skills (the rest comes from preferred). Validated range: 0.5-1.0.
+MATCHING_REQUIRED_SHARE = env.float("MATCHING_REQUIRED_SHARE", default=0.8)
+
 # --- Django REST Framework -----------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -151,6 +158,8 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "TEST_REQUEST_DEFAULT_FORMAT": "json",
+    # Scores and coverages are JSON numbers (e.g. 80.0), not strings.
+    "COERCE_DECIMAL_TO_STRING": False,
 }
 
 SPECTACULAR_SETTINGS = {
