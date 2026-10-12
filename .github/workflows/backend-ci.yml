@@ -49,23 +49,27 @@ jobs:
       # reason for a failure on the run's Summary page. Later checks still run
       # after an earlier one fails (`!cancelled()`), so one problem can't hide others.
       - name: Django system checks
+        id: check
         run: |
           set -o pipefail
           python manage.py check 2>&1 | tee check-output.txt
 
       - name: Migrations are up to date
+        id: migrations
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           python manage.py makemigrations --check --dry-run 2>&1 | tee migrations-output.txt
 
       - name: OpenAPI schema generates without warnings
+        id: schema
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           python manage.py spectacular --fail-on-warn --file /tmp/schema.yml 2>&1 | tee schema-output.txt
 
       - name: Run tests
+        id: tests
         if: ${{ !cancelled() }}
         run: |
           set -o pipefail
@@ -75,13 +79,19 @@ jobs:
       # so nobody has to dig through step logs.
       - name: Publish test summary
         if: always()
+        env:
+          CHECK_OUTCOME: ${{ steps.check.outcome }}
+          MIGRATIONS_OUTCOME: ${{ steps.migrations.outcome }}
+          SCHEMA_OUTCOME: ${{ steps.schema.outcome }}
         run: |
           {
-            for f in check-output.txt migrations-output.txt schema-output.txt; do
-              if [ -s "$f" ] && grep -qiE "error|warning|changes detected|Traceback" "$f"; then
-                echo "## Problems in ${f%-output.txt} step"
+            # Only show a check's output when that step actually failed.
+            for pair in "check:$CHECK_OUTCOME" "migrations:$MIGRATIONS_OUTCOME" "schema:$SCHEMA_OUTCOME"; do
+              name="${pair%%:*}"; outcome="${pair#*:}"
+              if [ "$outcome" = "failure" ] && [ -s "$name-output.txt" ]; then
+                echo "## Failed: $name step"
                 echo '```'
-                tail -n 40 "$f"
+                tail -n 40 "$name-output.txt"
                 echo '```'
               fi
             done
@@ -90,6 +100,12 @@ jobs:
             grep -E "^=+ .*(passed|failed|error).* =+$" pytest-output.txt | tail -n 1 || echo "no pytest summary line found"
             grep -E "^(FAILED|ERROR) " pytest-output.txt | head -n 30 || true
             echo '```'
+            if grep -q "warnings summary" pytest-output.txt; then
+              echo "### Test warnings"
+              echo '```'
+              sed -n '/warnings summary/,/-- Docs/p' pytest-output.txt | head -n 40
+              echo '```'
+            fi
             echo "## Coverage"
             coverage report --format=markdown || echo "coverage report unavailable"
           } >> "$GITHUB_STEP_SUMMARY"
