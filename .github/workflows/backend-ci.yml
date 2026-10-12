@@ -7,7 +7,8 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned so the runner image doesn't change underneath us (ubuntu-latest moves to 26 in Oct 2026).
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: backend
@@ -33,9 +34,9 @@ jobs:
       DJANGO_SECRET_KEY: ci-only-not-a-real-secret
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -54,4 +55,20 @@ jobs:
         run: python manage.py spectacular --fail-on-warn --file /tmp/schema.yml
 
       - name: Run tests
-        run: pytest --cov=apps --cov-report=term-missing
+        run: |
+          set -o pipefail
+          pytest --cov=apps --cov-report=term-missing 2>&1 | tee pytest-output.txt
+
+      # Shows the pass count and coverage table on the run's Summary page,
+      # so nobody has to dig through step logs.
+      - name: Publish test summary
+        if: always()
+        run: |
+          {
+            echo "## Test results"
+            echo '```'
+            grep -E "^=+ .*(passed|failed|error).* =+$" pytest-output.txt | tail -n 1 || echo "no pytest summary line found"
+            echo '```'
+            echo "## Coverage"
+            coverage report --format=markdown || echo "coverage report unavailable"
+          } >> "$GITHUB_STEP_SUMMARY"
