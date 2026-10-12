@@ -17,6 +17,7 @@ from django.db import transaction
 from ..models import Resume
 from .pdf_parser import PdfTextExtraction, extract_text_from_pdf
 from .pdf_validation import validate_pdf_upload
+from .resume_parsing import try_parse_and_store
 
 logger = logging.getLogger(__name__)
 
@@ -65,4 +66,5 @@ def create_resume(owner, inspected: InspectedResume, title: str | None = None) -
         "Resume stored id=%s owner=%s pages=%s bytes=%s",
         resume.id, owner.pk, resume.page_count, resume.file_size,
     )
+    try_parse_and_store(resume)
     return resume

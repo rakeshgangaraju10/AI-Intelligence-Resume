@@ -19,11 +19,30 @@ class ResumeDetailSerializer(ResumeListSerializer):
     char_count = serializers.SerializerMethodField()
 
     class Meta(ResumeListSerializer.Meta):
-        fields = ResumeListSerializer.Meta.fields + ["error_code", "char_count", "extracted_text"]
+        fields = ResumeListSerializer.Meta.fields + [
+            "error_code", "parse_warnings", "parsed_at", "char_count", "extracted_text",
+        ]
         read_only_fields = fields
 
     def get_char_count(self, obj: Resume) -> int:
         return len(obj.extracted_text)
+
+
+class ResumeUpdateSerializer(serializers.ModelSerializer):
+    """PATCH /resumes/{id}/ — only the user-facing label is editable."""
+
+    class Meta:
+        model = Resume
+        fields = ["title"]
+
+    def validate_title(self, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Title cannot be blank.", code="blank")
+        return value
+
+    def to_representation(self, instance: Resume) -> dict:
+        return ResumeDetailSerializer(instance, context=self.context).data
 
 
 class ResumeUploadSerializer(serializers.Serializer):

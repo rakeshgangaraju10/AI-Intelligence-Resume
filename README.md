@@ -4,7 +4,7 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status: Stage 1 of 8 (backend foundation), awaiting first verified test run (Stage 2).** What exists today is listed
+> **Status: Stages 1 and 4 code complete (backend); awaiting the first verified test run (Stage 2).** What exists today is listed
 > below. Nothing in later stages is implemented yet, and nothing has been deployed.
 
 ## What works in Stage 1
@@ -16,11 +16,13 @@ deterministic matching score.
 | Text extraction | PyMuPDF; rejects corrupt, password-protected, scanned (no text layer), too-many-pages and oversized-text PDFs with specific error codes |
 | Storage | Private directory, server-generated filenames, no public URL, file removed when the resume or user is deleted |
 | Resume API | List (paginated), retrieve, delete — scoped to the owner (other users get 404) |
+| Structured parsing (Stage 4) | Rule-based section, contact, skill, education, experience, project and certification extraction; 115-skill dictionary with aliases; evidence for every detected skill |
+| Review & editing (Stage 4) | Extraction endpoint, CRUD per section, profile editing, re-parse that preserves user edits, parser vs user provenance |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |
 | Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), GitHub Actions CI on PostgreSQL |
 
-Not yet built: structured parsing (Stage 4), job descriptions and matching
-(Stage 5), React frontend (Stage 6), history/compare (Stage 7), production deploy (Stage 8).
+Not yet built: job descriptions and matching (Stage 5), React frontend
+(Stage 6), history/compare (Stage 7), production deploy (Stage 8).
 
 ## Tech stack
 
@@ -37,8 +39,11 @@ careerforge/
 │   ├── apps/
 │   │   ├── core/               # health check, error envelope, pagination
 │   │   ├── accounts/           # custom User + session auth endpoints
+│   │   ├── skills/             # skill dictionary (models, seed data, matcher)
 │   │   └── resumes/            # Resume model, private storage, upload API
-│   │       └── services/       # pdf_validation.py, pdf_parser.py, resume_ingestion.py
+│   │       └── services/       # pdf_validation.py, pdf_parser.py, resume_ingestion.py,
+│   │           │               # resume_parsing.py
+│   │           └── parsing/    # section/contact/skill/education/experience/project/certification extractors
 │   ├── tests/                  # pytest suite + synthetic PDF factory
 │   ├── requirements.txt / requirements-dev.txt
 │   └── Dockerfile

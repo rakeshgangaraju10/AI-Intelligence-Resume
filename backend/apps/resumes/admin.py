@@ -17,7 +17,8 @@ class ResumeAdmin(admin.ModelAdmin):
     list_select_related = ["owner"]
     fields = [
         "id", "owner", "title", "original_filename", "status", "error_code",
-        "page_count", "file_size", "sha256", "created_at", "updated_at",
+        "page_count", "file_size", "sha256", "parse_warnings", "parsed_at",
+        "created_at", "updated_at",
     ]
     readonly_fields = fields
 

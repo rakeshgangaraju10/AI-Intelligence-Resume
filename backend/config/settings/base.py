@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     # Local
     "apps.core",
     "apps.accounts",
+    "apps.skills",
     "apps.resumes",
 ]
 

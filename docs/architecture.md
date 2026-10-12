@@ -1,4 +1,4 @@
-# Architecture (Stage 1)
+# Architecture (Stages 1–4)
 
 ## Components
 
@@ -9,11 +9,13 @@ Browser / SPA (Stage 6)
 Django + DRF  (/api/v1/)
    ├── core       health check, error envelope, pagination
    ├── accounts   User model, session auth endpoints
+   ├── skills     Skill + SkillAlias dictionary (seeded by migration, edited in admin)
    └── resumes    ResumeViewSet ──► ResumeUploadSerializer
                                      └─► services/resume_ingestion.py
                                           ├─ pdf_validation.py  (name, type, size, signature)
                                           ├─ pdf_parser.py      (PyMuPDF → normalised text)
-                                          └─ persist Resume + file (private storage)
+                                          ├─ persist Resume + file (private storage)
+                                          └─ resume_parsing.py → parsing/ pipeline → structured rows
    │
    ├── PostgreSQL     users, sessions, resumes (+ extracted text)
    └── PRIVATE_MEDIA_ROOT   PDFs at resumes/<user_id>/<random>.pdf (never served)
@@ -51,3 +53,38 @@ Django + DRF  (/api/v1/)
 `original_filename`, `file`, `file_size` (>0), `sha256`, `page_count` (>0),
 `status`, `error_code`, `extracted_text`, `created_at`, `updated_at`.
 Indexes: `(owner, -created_at)` for listing, `(owner, sha256)` for duplicate detection later.
+
+## Parsing pipeline (Stage 4)
+
+All parsers are pure Python in `apps/resumes/services/parsing/` and are unit-tested
+without a database.
+
+| Step | Module | Approach |
+|---|---|---|
+| Sections | `section_extractor.py` | Heading lines matched against synonym lists ("Technical Skills", "Work Experience", "Academic Projects", ...). Known non-parsed headings ("Achievements", "Hobbies") close the previous section. Generic ALL-CAPS detection is deliberately avoided because project/company names are often capitalised. |
+| Contact | `contact_extractor.py` | Email/phone/URL regexes; name = first 2-4 word alphabetic header line. Location is never guessed. |
+| Skills | `skill_extractor.py` + `apps/skills/dictionary.py` | Dictionary matching with token boundaries, longest-alias-first, URL stripping. Ambiguous aliases (C, R, Go, Excel, DRF, Spring) only count inside the Skills section, case-sensitively. Each hit stores section + evidence line. |
+| Education | `education_extractor.py` | Entries start at degree or institution keywords; grade, year ranges, field of study ("in X") extracted only when written. |
+| Experience | `experience_extractor.py` | Entries anchored on date-range lines; header split into title / company / location. No dates → no entries + `experience_unstructured` warning (nothing invented). |
+| Projects | `project_extractor.py` | Title lines vs description bullets; supports "Name - description" one-liners. Technologies = dictionary skills explicitly present in that project's text. |
+| Certifications | `certification_extractor.py` | One per line; name / issuer / date split on separators. |
+| Assemble | `resume_normalizer.py` | Runs the above, truncates to column limits, emits warnings. |
+
+Confidence scores are intentionally not shown: the rules are deterministic, and
+a made-up percentage would imply a calibration that doesn't exist. Instead every
+entry carries `source` and `is_verified`, and skills carry evidence.
+
+## Data model additions (Stage 4)
+
+```
+Resume 1──1 ResumeProfile            (user_edited flag protects edits)
+Resume 1──* ResumeSkill ──* skills.Skill (nullable: custom skills allowed)
+Resume 1──* ResumeEducation / ResumeExperience / ResumeProject / ResumeCertification
+skills.Skill 1──* skills.SkillAlias  (case-insensitive unique alias, is_ambiguous)
+```
+
+Every list entry shares `source`, `is_verified`, `position`, timestamps (abstract
+`ResumeEntry`). `ResumeSkill` has a unique constraint on `(resume, lower(name))`.
+Relational tables (rather than one JSON blob) give per-entry validation,
+editing and ownership checks, and let Stage 5 join resume skills to job
+requirements in SQL.

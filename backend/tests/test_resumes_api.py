@@ -46,7 +46,7 @@ class TestUpload:
         assert body["title"] == "Alex Resume"
         assert body["original_filename"] == "Alex Resume.pdf"
         assert body["page_count"] == 1
-        assert body["status"] == "text_extracted"
+        assert body["status"] == "parsed"  # structured parsing runs right after upload
         assert "Django REST Framework" in body["extracted_text"]
         assert body["char_count"] == len(body["extracted_text"])
 
@@ -214,7 +214,27 @@ class TestReadAndDelete:
         assert api_client.get(detail_url(resume_id)).status_code == 403
         assert api_client.delete(detail_url(resume_id)).status_code == 403
 
-    def test_update_is_not_available_yet(self, auth_client):
+    def test_rename_resume(self, auth_client):
         resume_id = upload(auth_client).json()["id"]
-        response = auth_client.patch(detail_url(resume_id), {"title": "x"}, format="json")
-        assert response.status_code == 405
+        response = auth_client.patch(detail_url(resume_id), {"title": "  Backend v3  "}, format="json")
+        assert response.status_code == 200
+        assert response.json()["title"] == "Backend v3"
+
+    def test_rename_rejects_blank_title_and_ignores_other_fields(self, auth_client):
+        resume_id = upload(auth_client).json()["id"]
+        response = auth_client.patch(detail_url(resume_id), {"title": "   "}, format="json")
+        assert response.status_code == 400
+        response = auth_client.patch(
+            detail_url(resume_id), {"title": "ok", "extracted_text": "hacked", "status": "failed"}, format="json"
+        )
+        assert response.status_code == 200
+        resume = Resume.objects.get(pk=resume_id)
+        assert resume.extracted_text != "hacked" and resume.status == "parsed"
+
+    def test_put_is_not_allowed(self, auth_client):
+        resume_id = upload(auth_client).json()["id"]
+        assert auth_client.put(detail_url(resume_id), {"title": "x"}, format="json").status_code == 405
+
+    def test_cannot_rename_another_users_resume(self, auth_client, other_client):
+        resume_id = upload(auth_client).json()["id"]
+        assert other_client.patch(detail_url(resume_id), {"title": "x"}, format="json").status_code == 404
