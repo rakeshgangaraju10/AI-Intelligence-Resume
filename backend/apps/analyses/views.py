@@ -111,9 +111,11 @@ class AnalysisViewSet(
         def rows(analysis: Analysis) -> list[SkillRow]:
             return [SkillRow(r.skill_name, r.kind, r.weight, r.status) for r in analysis.skill_results.all()]
 
+        # Pass model instances: the nested AnalysisDetailSerializer serializes them
+        # (passing already-serialized dicts breaks its related-field handling).
         payload = {
-            "a": AnalysisDetailSerializer(a).data,
-            "b": AnalysisDetailSerializer(b).data,
+            "a": a,
+            "b": b,
             "score_delta": round(float(b.score) - float(a.score), 1),
             "basis": comparison_basis(str(a.resume_id), str(b.resume_id), a.job_id, b.job_id),
             "skills": [vars(c) for c in compare_skill_results(rows(a), rows(b))],

@@ -141,8 +141,7 @@ export function AnalysisDetailPage() {
               </div>
               <ProgressBar value={analysis.preferred_coverage ?? 0} label="Preferred skill coverage" />
             </div>
-            <p className="hidden text-sm text-slate-700 print:block">Score = {analysis.breakdown.formula}</p>
-            <details className="text-sm print:hidden">
+            <details className="text-sm">
               <summary className="cursor-pointer font-medium text-indigo-700">How this score was calculated</summary>
               <div className="mt-2 space-y-1 text-slate-700">
                 <p>
