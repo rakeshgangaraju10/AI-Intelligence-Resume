@@ -15,6 +15,12 @@ export default defineConfig(({ mode }) => {
         "/api": { target: env.VITE_API_PROXY_TARGET || "http://localhost:8000" },
       },
     },
+    // `vite preview` (used by the E2E tests) proxies /api the same way.
+    preview: {
+      proxy: {
+        "/api": { target: env.VITE_API_PROXY_TARGET || "http://localhost:8000" },
+      },
+    },
     test: {
       environment: "jsdom",
       // Playwright specs in e2e/ are run by Playwright, not Vitest.

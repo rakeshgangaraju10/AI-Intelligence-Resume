@@ -34,7 +34,7 @@ class JobViewSet(viewsets.ModelViewSet):
             qs = qs.annotate(
                 required_count=Count("requirements", filter=Q(requirements__kind=JobRequirement.Kind.REQUIRED)),
                 preferred_count=Count("requirements", filter=Q(requirements__kind=JobRequirement.Kind.PREFERRED)),
-            ).defer("description")
+            ).defer("description").order_by("-created_at", "-id")  # GROUP BY drops Meta.ordering
             search = self.request.query_params.get("search", "").strip()
             if search:
                 qs = qs.filter(Q(title__icontains=search) | Q(company__icontains=search))

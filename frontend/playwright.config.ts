@@ -37,10 +37,13 @@ export default defineConfig({
       stdout: "pipe",
     },
     {
-      command: "npm run dev -- --host 127.0.0.1 --strictPort",
+      // Production build + `vite preview` (same /api proxy as dev). The dev server
+      // reloads the page while it optimises dependencies on first visit, which
+      // interrupted typing in CI.
+      command: "npx vite build && npx vite preview --host 127.0.0.1 --port 5173 --strictPort",
       url: "http://127.0.0.1:5173",
       reuseExistingServer: !process.env.CI,
-      timeout: 60_000,
+      timeout: 120_000,
       // Node may resolve "localhost" to ::1 while Django listens on 127.0.0.1.
       env: { VITE_API_PROXY_TARGET: "http://127.0.0.1:8000" },
     },

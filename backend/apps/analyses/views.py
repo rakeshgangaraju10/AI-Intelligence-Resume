@@ -50,7 +50,8 @@ class AnalysisViewSet(
             qs = qs.annotate(
                 matched_count=Count("skill_results", filter=Q(skill_results__status=AnalysisSkillResult.Status.MATCHED)),
                 missing_count=Count("skill_results", filter=~Q(skill_results__status=AnalysisSkillResult.Status.MATCHED)),
-            ).defer("breakdown", "strengths", "improvements", "suggestions")
+            ).defer("breakdown", "strengths", "improvements", "suggestions").order_by("-created_at", "-id")
+            # (aggregation queries ignore Meta.ordering, so order explicitly for stable pagination)
             params = self.request.query_params
             try:
                 if params.get("resume"):

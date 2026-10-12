@@ -4,9 +4,9 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status:** Stages 1–6 verified in CI (Backend CI and Frontend CI green on commit `3dd0a04`).
-> Stage 7 (comparison, report export, hardening, Playwright E2E) built; awaiting its first CI run.
-> Nothing has been deployed.
+> **Status:** Backend CI (200 tests, 97% coverage) and Frontend CI (32 tests) green on
+> commit `fd36bd6`, including the Stage 7 comparison/report features. The Playwright E2E
+> journey is the last Stage 7 check still being fixed. Nothing has been deployed.
 
 ## What's implemented
 
@@ -139,7 +139,7 @@ the session/CSRF cookies work without cross-site settings. Keep
 ### End-to-end tests (Playwright)
 
 Needs PostgreSQL with migrations applied and the backend virtualenv active
-(Playwright starts Django and Vite itself, or reuses ones already running):
+(Playwright starts Django and a production build served by `vite preview`, or reuses servers already running):
 
 ```bash
 python scripts/make_e2e_resume_pdf.py frontend/e2e/.generated/e2e-resume.pdf   # synthetic resume
