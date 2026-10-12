@@ -19,10 +19,11 @@ The "intelligence" is rule-based NLP: section detection, a skill dictionary with
 aliases, and related-skill groups. Scoring is a documented formula. No resume
 data is sent to any external AI service.
 
-> **Status:** Stages 1–7 verified in CI on commit `44620ee`: Backend CI #9 (200 tests,
-> 97% coverage, no warnings), Frontend CI #5 (32 tests), E2E #4 (full Playwright journey in
-> Chromium, passed). Stage 8 (production Docker stack, deployment guide) is built and its
-> CI checks are pending. **Not deployed**: there is no public URL yet.
+> **Status:** All stages built and verified in CI on commit `c452832`: Backend CI #11
+> (201 tests, 97% coverage), Frontend CI #6 (32 tests), E2E #6 (full Playwright journey
+> in Chromium), Production stack #2 (Docker Compose stack: 13/13 smoke checks through
+> nginx, `check --deploy` without errors, SPA renders under the production CSP).
+> **Not deployed**: there is no public URL yet. See [docs/deployment.md](docs/deployment.md).
 
 ## Screenshots
 

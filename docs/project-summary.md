@@ -27,7 +27,7 @@ algorithm.
   for other users' data), scoped rate limiting, layered PDF upload validation
   and private file storage**. Added CSP and other security headers at the API
   and nginx layers.
-- Wrote **200 backend tests (pytest, 97% coverage), 32 frontend tests (Vitest +
+- Wrote **201 backend tests (pytest, 97% coverage), 32 frontend tests (Vitest +
   Testing Library) and a Playwright end-to-end journey**. All run in **GitHub
   Actions**, along with OpenAPI schema validation and a smoke test of the
   production **Docker Compose (nginx + gunicorn + PostgreSQL)** stack.
@@ -35,7 +35,7 @@ algorithm.
 Shorter version for a one-line project entry:
 
 > CareerForge — Django REST Framework, React/TypeScript, PostgreSQL, Docker. PDF
-> resume parsing, explainable job-matching score, 200+ automated tests (97%
+> resume parsing, explainable job-matching score, 230+ automated tests (97%
 > backend coverage), Playwright E2E, CI on GitHub Actions.
 
 ## Interview talking points
