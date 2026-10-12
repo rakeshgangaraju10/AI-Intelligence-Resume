@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "apps.core.middleware.SecurityHeadersMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -154,6 +155,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "auth": env("THROTTLE_AUTH_RATE", default="10/minute"),
         "uploads": env("THROTTLE_UPLOAD_RATE", default="20/hour"),
+        "analyses": env("THROTTLE_ANALYSIS_RATE", default="60/hour"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

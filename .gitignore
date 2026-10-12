@@ -26,6 +26,9 @@ backend/media/
 node_modules/
 frontend/dist/
 frontend/coverage/
+frontend/e2e/.generated/
+frontend/test-results/
+frontend/playwright-report/
 
 # --- Editors / OS ---
 .vscode/

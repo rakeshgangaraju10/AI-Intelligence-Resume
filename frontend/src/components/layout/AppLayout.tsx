@@ -39,7 +39,7 @@ export function AppLayout() {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:px-3 focus:py-2">
         Skip to content
       </a>
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link to="/dashboard" className="text-lg font-bold text-indigo-800">
             CareerForge

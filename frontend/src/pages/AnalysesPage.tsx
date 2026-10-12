@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { Button, LinkButton } from "../components/ui/Button";
 import { Alert, EmptyState, PageHeader } from "../components/ui/Feedback";
@@ -23,12 +23,27 @@ export function AnalysesPage() {
     [resumeFilter, page],
   );
   const [actionError, setActionError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<number[]>([]);
+  const navigate = useNavigate();
+
+  function toggleSelected(id: number) {
+    setSelected((current) =>
+      current.includes(id) ? current.filter((x) => x !== id) : current.length < 2 ? [...current, id] : current,
+    );
+  }
+
+  function handleCompare() {
+    // Lower id = earlier run, so "a" is the baseline and the delta reads "since then".
+    const [a, b] = [...selected].sort((x, y) => x - y);
+    navigate(`/analyses/compare?a=${a}&b=${b}`);
+  }
 
   async function handleDelete(id: number) {
     if (!window.confirm("Delete this analysis from your history?")) return;
     setActionError(null);
     try {
       await deleteAnalysis(id);
+      setSelected((current) => current.filter((x) => x !== id));
       await reload();
     } catch (err) {
       setActionError(toApiError(err).message);
@@ -47,16 +62,26 @@ export function AnalysesPage() {
         description="Every analysis is saved as it was run, so you can track how resume edits change the match."
         actions={<LinkButton to="/jobs">Run a new analysis</LinkButton>}
       />
-      <div className="mb-4 max-w-xs">
-        <SelectField
-          label="Filter by resume"
-          options={resumeOptions}
-          value={resumeFilter}
-          onChange={(e) => {
-            setPage(1);
-            setResumeFilter(e.target.value);
-          }}
-        />
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="w-full max-w-xs">
+          <SelectField
+            label="Filter by resume"
+            options={resumeOptions}
+            value={resumeFilter}
+            onChange={(e) => {
+              setPage(1);
+              setResumeFilter(e.target.value);
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-slate-600" aria-live="polite">
+            {selected.length === 2 ? "2 analyses selected" : "Select two analyses to compare"}
+          </p>
+          <Button variant="secondary" disabled={selected.length !== 2} onClick={handleCompare}>
+            Compare selected
+          </Button>
+        </div>
       </div>
       {actionError && (
         <div className="mb-4">
@@ -77,6 +102,9 @@ export function AnalysesPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                 <tr>
+                  <th scope="col" className="px-4 py-3">
+                    <span className="sr-only">Select for comparison</span>
+                  </th>
                   <th scope="col" className="px-4 py-3 font-medium">Job</th>
                   <th scope="col" className="px-4 py-3 font-medium">Resume</th>
                   <th scope="col" className="px-4 py-3 font-medium">Score</th>
@@ -90,7 +118,17 @@ export function AnalysesPage() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data.results.map((a) => (
-                  <tr key={a.id}>
+                  <tr key={a.id} className={selected.includes(a.id) ? "bg-indigo-50" : undefined}>
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-slate-300 text-indigo-700 focus:ring-indigo-600"
+                        checked={selected.includes(a.id)}
+                        disabled={!selected.includes(a.id) && selected.length >= 2}
+                        onChange={() => toggleSelected(a.id)}
+                        aria-label={`Select ${a.job_title} (${a.resume_title}, ${formatDateTime(a.created_at)}) for comparison`}
+                      />
+                    </td>
                     <td className="px-4 py-3">
                       <Link to={`/analyses/${a.id}`} className="font-medium text-indigo-800 underline-offset-2 hover:underline">
                         {a.job_title}

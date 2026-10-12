@@ -1,6 +1,7 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse, type InternalAxiosRequestConfig } from "axios";
 import { describe, expect, it } from "vitest";
 
+import { filenameFromDisposition } from "./analyses";
 import { ApiError, toApiError } from "./api";
 
 function axiosErrorWith(status: number, data: unknown): AxiosError {
@@ -49,5 +50,13 @@ describe("toApiError", () => {
     const original = new ApiError(403, "permission_denied", "Nope");
     expect(toApiError(original)).toBe(original);
     expect(toApiError("boom").code).toBe("unknown_error");
+  });
+});
+
+describe("filenameFromDisposition", () => {
+  it("uses the server's filename and falls back when missing", () => {
+    expect(filenameFromDisposition('attachment; filename="careerforge-analysis-7.md"', "x.md")).toBe("careerforge-analysis-7.md");
+    expect(filenameFromDisposition(undefined, "fallback.md")).toBe("fallback.md");
+    expect(filenameFromDisposition("attachment", "fallback.md")).toBe("fallback.md");
   });
 });

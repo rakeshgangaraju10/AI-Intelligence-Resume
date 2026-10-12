@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
     },
     test: {
       environment: "jsdom",
+      // Playwright specs in e2e/ are run by Playwright, not Vitest.
+      include: ["src/**/*.test.{ts,tsx}"],
       setupFiles: ["./src/test/setup.ts"],
       css: false,
       restoreMocks: true,

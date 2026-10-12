@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+from rest_framework.throttling import ScopedRateThrottle
 
 from apps.analyses.models import Analysis
 from apps.jobs.models import JobDescription, JobRequirement
@@ -279,3 +280,100 @@ class TestAnalyses:
     def test_requires_authentication(self, api_client):
         assert api_client.get(ANALYSES).status_code == 403
         assert api_client.get(JOBS).status_code == 403
+
+
+# --- Stage 7: compare, report, rate limit ------------------------------------------------
+
+COMPARE = reverse("analysis-compare")
+
+
+def report_url(pk):
+    return reverse("analysis-report", kwargs={"pk": pk})
+
+
+def two_versions(client):
+    """Same job analysed before and after adding Docker to the resume."""
+    resume_id = upload_resume(client)
+    job = analysis_job(client)
+    first = client.post(ANALYSES, {"resume": resume_id, "job": job["id"]}).json()
+    client.post(reverse("resume-skills-list", kwargs={"resume_pk": resume_id}), {"name": "Docker"})
+    second = client.post(ANALYSES, {"resume": resume_id, "job": job["id"]}).json()
+    return first, second
+
+
+class TestCompareAndReport:
+    def test_compare_two_versions_of_a_resume(self, auth_client, django_assert_max_num_queries):
+        first, second = two_versions(auth_client)
+        with django_assert_max_num_queries(6):
+            response = auth_client.get(COMPARE, {"a": first["id"], "b": second["id"]})
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert body["a"]["id"] == first["id"] and body["b"]["id"] == second["id"]
+        assert body["score_delta"] == 16.0  # 58.0 -> 74.0
+        assert body["basis"] == "same_resume_and_job"
+        assert body["skills"][0] == {
+            "skill_name": "Docker", "kind_a": "required", "kind_b": "required",
+            "status_a": "missing", "status_b": "matched", "change": "gained",
+        }
+        changes = {s["skill_name"]: s["change"] for s in body["skills"]}
+        assert changes["Python"] == "unchanged" and changes["AWS"] == "unchanged"
+
+    def test_compare_across_jobs_reports_basis(self, auth_client):
+        resume_id = upload_resume(auth_client)
+        job_a = analysis_job(auth_client)
+        job_b = make_job(auth_client, title="Frontend", required_skills=["React", "TypeScript"])
+        a = auth_client.post(ANALYSES, {"resume": resume_id, "job": job_a["id"]}).json()
+        b = auth_client.post(ANALYSES, {"resume": resume_id, "job": job_b["id"]}).json()
+        body = auth_client.get(COMPARE, {"a": a["id"], "b": b["id"]}).json()
+        assert body["basis"] == "same_resume"
+        changes = {s["skill_name"]: s["change"] for s in body["skills"]}
+        assert changes["TypeScript"] == "only_in_b" and changes["Docker"] == "only_in_a"
+
+    def test_compare_validation(self, auth_client):
+        first, _ = two_versions(auth_client)
+        response = auth_client.get(COMPARE, {"a": first["id"]})
+        assert response.status_code == 400 and field_code(response, "b") == "required"
+        response = auth_client.get(COMPARE, {"a": "x", "b": first["id"]})
+        assert response.status_code == 400 and field_code(response, "a") == "invalid"
+        response = auth_client.get(COMPARE, {"a": first["id"], "b": first["id"]})
+        assert response.status_code == 400 and field_code(response, "b") == "same_analysis"
+        assert auth_client.get(COMPARE, {"a": first["id"], "b": first["id"] + 999}).status_code == 404
+
+    def test_compare_and_report_are_owner_only(self, auth_client, other_client):
+        first, second = two_versions(auth_client)
+        mine = two_versions(other_client)[0]
+        assert other_client.get(COMPARE, {"a": first["id"], "b": second["id"]}).status_code == 404
+        assert other_client.get(COMPARE, {"a": mine["id"], "b": first["id"]}).status_code == 404
+        assert other_client.get(report_url(first["id"])).status_code == 404
+
+    def test_markdown_report_download(self, auth_client):
+        first, _ = two_versions(auth_client)
+        response = auth_client.get(report_url(first["id"]))
+        assert response.status_code == 200
+        assert response["Content-Type"] == "text/markdown; charset=utf-8"
+        assert response["Content-Disposition"] == f'attachment; filename="careerforge-analysis-{first["id"]}.md"'
+        assert response["Cache-Control"] == "no-store"
+        text = response.content.decode()
+        assert "## Matching score: 58.0 / 100" in text
+        assert "not a probability of being hired" in text
+        assert "| Docker | required | 1 | Missing |" in text
+        assert "| MySQL | required | 1 | Related skill found |" in text
+
+    def test_report_and_compare_require_authentication(self, api_client):
+        assert api_client.get(report_url(1)).status_code == 403
+        assert api_client.get(COMPARE, {"a": 1, "b": 2}).status_code == 403
+
+    def test_running_analyses_is_rate_limited(self, auth_client, monkeypatch):
+        monkeypatch.setattr(
+            ScopedRateThrottle, "THROTTLE_RATES",
+            {"auth": "1000/minute", "uploads": "1000/minute", "analyses": "2/minute"},
+        )
+        resume_id = upload_resume(auth_client)
+        job = analysis_job(auth_client)
+        for _ in range(2):
+            assert auth_client.post(ANALYSES, {"resume": resume_id, "job": job["id"]}).status_code == 201
+        response = auth_client.post(ANALYSES, {"resume": resume_id, "job": job["id"]})
+        assert response.status_code == 429
+        assert response.json()["error"]["code"] == "throttled"
+        # reading history is not throttled
+        assert auth_client.get(ANALYSES).status_code == 200

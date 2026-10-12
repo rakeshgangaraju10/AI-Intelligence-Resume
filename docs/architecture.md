@@ -7,11 +7,12 @@ Browser / SPA (Stage 6)
    │  HTTPS, session cookie + X-CSRFToken
    ▼
 Django + DRF  (/api/v1/)
-   ├── core       health check, error envelope, pagination
+   ├── core       health check, error envelope, pagination, security-headers middleware
    ├── accounts   User model, session auth endpoints
    ├── skills     Skill + SkillAlias dictionary (seeded by migration, edited in admin)
    ├── jobs       JobDescription + JobRequirement; jd_extractor suggests required/preferred skills
    ├── analyses   matching.py (pure engine) ◄── analysis_service.py (gathers evidence, stores results)
+   │              comparison.py + report.py (pure; compare two stored analyses, render Markdown)
    └── resumes    ResumeViewSet ──► ResumeUploadSerializer
                                      └─► services/resume_ingestion.py
                                           ├─ pdf_validation.py  (name, type, size, signature)
@@ -108,6 +109,9 @@ skills.SkillGroup *──* skills.Skill            (curated related-skill famili
   resume or job is edited later. Score has a 0–100 check constraint.
 * Deleting a resume or job deletes its analyses (CASCADE); deleting a user deletes everything.
 * The matching engine is pure Python; see [matching-algorithm.md](matching-algorithm.md).
+* Comparison and reports (Stage 7) read only the stored snapshots, so they show
+  exactly what the user saw when each analysis ran. Both are pure functions over
+  serializer output, tested without a database.
 
 ## Frontend (Stage 6)
 

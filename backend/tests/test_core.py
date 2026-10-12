@@ -50,5 +50,22 @@ def test_openapi_schema_is_generated(api_client, user):
     response = api_client.get(reverse("schema"))
     assert response.status_code == 200
     content = response.content.decode()
-    for path in ["/api/v1/resumes/", "/api/v1/auth/login/", "/api/v1/health/"]:
+    for path in ["/api/v1/resumes/", "/api/v1/auth/login/", "/api/v1/health/", "/api/v1/analyses/compare/",
+                 "/api/v1/analyses/{id}/report/", "text/markdown"]:
         assert path in content
+
+
+@pytest.mark.django_db
+class TestSecurityHeaders:
+    def test_api_responses_are_locked_down(self, api_client):
+        response = api_client.get(reverse("health"))
+        assert response["Content-Security-Policy"] == "default-src 'none'; frame-ancestors 'none'"
+        assert "camera=()" in response["Permissions-Policy"]
+        assert response["X-Content-Type-Options"] == "nosniff"
+
+    def test_html_pages_keep_their_own_policy(self, api_client, user):
+        api_client.force_login(user)
+        response = api_client.get(reverse("swagger-ui"))
+        assert response.status_code == 200
+        assert "Content-Security-Policy" not in response
+        assert "Permissions-Policy" in response

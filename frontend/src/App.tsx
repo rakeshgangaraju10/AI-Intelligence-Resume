@@ -4,6 +4,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { PublicLayout } from "./components/layout/PublicLayout";
 import { ProtectedRoute, PublicOnlyRoute } from "./features/auth/RouteGuards";
 import { AnalysesPage } from "./pages/AnalysesPage";
+import { AnalysisComparePage } from "./pages/AnalysisComparePage";
 import { AnalysisDetailPage } from "./pages/AnalysisDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
@@ -39,6 +40,7 @@ export function App() {
           <Route path="jobs/new" element={<JobNewPage />} />
           <Route path="jobs/:jobId" element={<JobDetailPage />} />
           <Route path="analyses" element={<AnalysesPage />} />
+          <Route path="analyses/compare" element={<AnalysisComparePage />} />
           <Route path="analyses/:analysisId" element={<AnalysisDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>

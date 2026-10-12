@@ -74,3 +74,37 @@ class AnalysisCreateSerializer(serializers.Serializer):
 
     def to_representation(self, instance: Analysis) -> dict:
         return AnalysisDetailSerializer(instance, context=self.context).data
+
+
+class AnalysisCompareQuerySerializer(serializers.Serializer):
+    """Query string for GET /analyses/compare/?a=<id>&b=<id>."""
+
+    a = serializers.IntegerField(min_value=1)
+    b = serializers.IntegerField(min_value=1)
+
+    def validate(self, attrs: dict) -> dict:
+        if attrs["a"] == attrs["b"]:
+            raise serializers.ValidationError(
+                {"b": [serializers.ErrorDetail("Choose two different analyses to compare.", code="same_analysis")]}
+            )
+        return attrs
+
+
+class SkillComparisonSerializer(serializers.Serializer):
+    skill_name = serializers.CharField()
+    kind_a = serializers.CharField(allow_null=True)
+    kind_b = serializers.CharField(allow_null=True)
+    status_a = serializers.CharField(allow_null=True)
+    status_b = serializers.CharField(allow_null=True)
+    change = serializers.ChoiceField(choices=["gained", "lost", "only_in_a", "only_in_b", "unchanged"])
+
+
+class AnalysisComparisonSerializer(serializers.Serializer):
+    a = AnalysisDetailSerializer()
+    b = AnalysisDetailSerializer()
+    score_delta = serializers.FloatField(help_text="b.score - a.score, in score points.")
+    basis = serializers.ChoiceField(
+        choices=["same_resume_and_job", "same_job", "same_resume", "different"],
+        help_text="What the two analyses have in common. Only same_job comparisons are like-for-like.",
+    )
+    skills = SkillComparisonSerializer(many=True)

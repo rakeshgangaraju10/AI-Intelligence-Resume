@@ -1,6 +1,6 @@
 # Security notes
 
-Status of each control as of Stage 1. "Tested" means a pytest test exercises it.
+Status of each control as of Stage 7. "Tested" means a pytest test exercises it.
 
 ## Implemented
 
@@ -36,6 +36,22 @@ Status of each control as of Stage 1. "Tested" means a pytest test exercises it.
 | Password change keeps the current session and invalidates others (`update_session_auth_hash`) | `ChangePasswordView` (tested) |
 | Account deletion requires the current password and removes all owned data and files | `MeView.delete` (tested) |
 
+## History, reports and headers (Stage 7)
+
+| Control | Where | Tested |
+|---|---|---|
+| Compare and report endpoints use the owner-scoped queryset; another user's id → 404 (never 403, so ids aren't confirmed) | `AnalysisViewSet` | ✓ (API + E2E) |
+| Running analyses is rate-limited per user (`analyses` scope) | `AnalysisViewSet.get_throttles` | ✓ |
+| Report downloads are `Cache-Control: no-store` attachments; user text is Markdown-escaped | `report` action, `services/report.py` | ✓ |
+| `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` on every non-HTML response (JSON, Markdown) | `core/middleware.py` | ✓ |
+| `Permissions-Policy` disables camera, microphone, geolocation and payment | same | ✓ |
+| Report download goes through axios (cookies + same origin), not a public link | `frontend/src/services/analyses.ts` | ✓ |
+| Full journey including cross-user isolation checked in a real browser | `frontend/e2e/careerforge.spec.ts` | E2E |
+
+The HTML pages served by Django (admin, Swagger UI) don't get the deny-all CSP
+because they need their own scripts; the SPA's CSP is set by whatever serves the
+built frontend (Stage 8).
+
 ## Known gaps (tracked for later stages)
 
 - **Throttle storage**: LocMem cache is per process. Production with several
@@ -45,6 +61,7 @@ Status of each control as of Stage 1. "Tested" means a pytest test exercises it.
 - **Malware scanning** of uploads is not performed. PDFs are only parsed, never
   rendered to users or executed.
 - **Extracted text retention**: raw text is stored to support parsing and editing.
-  A user-facing retention/privacy setting arrives with the profile page (Stage 7).
+  Users can delete a resume (file + text) or their whole account; there is no
+  automatic expiry yet.
 - **Account lockout** beyond rate limiting is not implemented.
 - Admin access should be restricted by network/IP in production.

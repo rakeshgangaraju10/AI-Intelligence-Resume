@@ -8,7 +8,7 @@ import { SkillResultList } from "../features/analyses/SkillResultList";
 import { useApiData } from "../hooks/useApiData";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { formatDateTime, formatPercent } from "../lib/format";
-import { deleteAnalysis, getAnalysis } from "../services/analyses";
+import { deleteAnalysis, downloadReport, getAnalysis, saveFile } from "../services/analyses";
 import { toApiError } from "../services/api";
 
 function FeedbackList({ title, items, empty }: { title: string; items: string[]; empty: string }) {
@@ -33,6 +33,7 @@ export function AnalysisDetailPage() {
   const { data: a, error, loading } = useApiData(() => getAnalysis(analysisId), [analysisId]);
   useDocumentTitle(a ? `Analysis: ${a.job_title}` : "Analysis");
   const [deleting, setDeleting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   if (!Number.isInteger(analysisId) || error?.status === 404) {
@@ -65,6 +66,18 @@ export function AnalysisDetailPage() {
     }
   }
 
+  async function handleDownload() {
+    setDownloading(true);
+    setActionError(null);
+    try {
+      saveFile(await downloadReport(analysisId));
+    } catch (err) {
+      setActionError(toApiError(err).message);
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -79,14 +92,20 @@ export function AnalysisDetailPage() {
           </>
         }
         actions={
-          <>
+          <div className="flex flex-wrap gap-2 print:hidden">
             <LinkButton to={`/jobs/${analysis.job}?resume=${analysis.resume}`} variant="secondary">
               Re-run with edits
             </LinkButton>
+            <Button variant="secondary" onClick={handleDownload} loading={downloading}>
+              Download report
+            </Button>
+            <Button variant="secondary" onClick={() => window.print()}>
+              Print
+            </Button>
             <Button variant="danger" onClick={handleDelete} loading={deleting}>
               Delete
             </Button>
-          </>
+          </div>
         }
       />
       {actionError && <Alert tone="error">{actionError}</Alert>}
@@ -122,7 +141,8 @@ export function AnalysisDetailPage() {
               </div>
               <ProgressBar value={analysis.preferred_coverage ?? 0} label="Preferred skill coverage" />
             </div>
-            <details className="text-sm">
+            <p className="hidden text-sm text-slate-700 print:block">Score = {analysis.breakdown.formula}</p>
+            <details className="text-sm print:hidden">
               <summary className="cursor-pointer font-medium text-indigo-700">How this score was calculated</summary>
               <div className="mt-2 space-y-1 text-slate-700">
                 <p>

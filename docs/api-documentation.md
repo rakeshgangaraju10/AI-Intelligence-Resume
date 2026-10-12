@@ -187,3 +187,36 @@ Detail object (abridged):
 
 `status` is `matched`, `missing` or `related`. The algorithm is documented in
 [matching-algorithm.md](matching-algorithm.md).
+
+### Comparison and reports (Stage 7)
+
+| Method | Path | Notes |
+|---|---|---|
+| GET | `/analyses/compare/?a=<id>&b=<id>` | Both ids must be yours (otherwise `404`). Missing/non-integer ids → `required`/`invalid`; `a == b` → `same_analysis`. |
+| GET | `/analyses/{id}/report/` | Markdown file: `Content-Type: text/markdown; charset=utf-8`, `Content-Disposition: attachment; filename="careerforge-analysis-<id>.md"`, `Cache-Control: no-store`. Same content as the detail view. |
+
+Comparison response:
+
+```json
+{
+  "a": { "...": "analysis detail" },
+  "b": { "...": "analysis detail" },
+  "score_delta": 16.0,
+  "basis": "same_resume_and_job",
+  "skills": [
+    {"skill_name": "Docker", "kind_a": "required", "kind_b": "required",
+     "status_a": "missing", "status_b": "matched", "change": "gained"}
+  ]
+}
+```
+
+- `score_delta` is `b.score − a.score` in score points.
+- `basis` is `same_resume_and_job`, `same_job`, `same_resume` or `different`.
+  Only comparisons against the same job are like-for-like; the UI warns otherwise.
+- `change` is `gained` (not matched → matched; a *related* skill counts as not
+  matched), `lost`, `only_in_a`, `only_in_b` or `unchanged`. Skills are matched
+  by name case-insensitively; changed rows come first.
+
+Rate limit: `POST /analyses/` uses the `analyses` scope
+(`THROTTLE_ANALYSIS_RATE`, default `60/hour` per user). Reading history, comparing
+and downloading reports are not throttled.

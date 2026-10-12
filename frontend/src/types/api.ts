@@ -238,6 +238,26 @@ export interface AnalysisDetail {
   created_at: string;
 }
 
+export type ComparisonChange = "gained" | "lost" | "only_in_a" | "only_in_b" | "unchanged";
+export type ComparisonBasis = "same_resume_and_job" | "same_job" | "same_resume" | "different";
+
+export interface SkillComparison {
+  skill_name: string;
+  kind_a: RequirementKind | null;
+  kind_b: RequirementKind | null;
+  status_a: SkillResultStatus | null;
+  status_b: SkillResultStatus | null;
+  change: ComparisonChange;
+}
+
+export interface AnalysisComparison {
+  a: AnalysisDetail;
+  b: AnalysisDetail;
+  score_delta: number;
+  basis: ComparisonBasis;
+  skills: SkillComparison[];
+}
+
 // --- Errors ------------------------------------------------------------------------------
 
 export interface FieldError {

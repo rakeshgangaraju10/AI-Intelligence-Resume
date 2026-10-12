@@ -4,8 +4,9 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status:** backend Stages 1–5 verified in CI (172 tests, 96% coverage, run #4).
-> Stage 6 (React frontend) built; awaiting its first CI run. Nothing has been deployed.
+> **Status:** Stages 1–6 verified in CI (Backend CI and Frontend CI green on commit `3dd0a04`).
+> Stage 7 (comparison, report export, hardening, Playwright E2E) built; awaiting its first CI run.
+> Nothing has been deployed.
 
 ## What's implemented
 
@@ -20,19 +21,21 @@ deterministic matching score.
 | Review & editing (Stage 4) | Extraction endpoint, CRUD per section, profile editing, re-parse that preserves user edits, parser vs user provenance |
 | Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing |
 | Matching (Stage 5) | Deterministic weighted score (0–100) with matched / missing / related skills, resume evidence, per-skill explanations, strengths, improvements and suggestions; results stored as history |
+| History & reports (Stage 7) | Compare any two analyses skill by skill (gained / lost / unchanged, score delta, like-for-like warning); Markdown report download; print-friendly results page |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |
 | Frontend (Stage 6) | React + TypeScript SPA: landing, register/login, dashboard, drag-and-drop upload with progress, resume review/editing, job descriptions with weighted skills, analysis results with evidence, history, settings |
-| Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), Vitest + Testing Library component tests, GitHub Actions CI for both |
+| Security hardening (Stage 7) | Per-user rate limit on running analyses; deny-all CSP and Permissions-Policy on API responses |
+| Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), Vitest + Testing Library component tests, Playwright end-to-end journey in Chromium, GitHub Actions CI for all three |
 
-Not yet built: side-by-side analysis comparison and report export (Stage 7),
-production deployment (Stage 8), optional semantic matching.
+Not yet built: production deployment (Stage 8), PDF report export (reports are
+Markdown; use Print → Save as PDF from the results page), optional semantic matching.
 
 ## Tech stack
 
 Python 3.12 · Django 5.2 LTS · Django REST Framework 3.16 · PostgreSQL 16 ·
 PyMuPDF · drf-spectacular · pytest · Docker Compose · GitHub Actions.
 Frontend: React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 ·
-React Hook Form · Axios · Vitest + Testing Library.
+React Hook Form · Axios · Vitest + Testing Library · Playwright (E2E).
 
 ## Repository layout
 
@@ -61,11 +64,13 @@ careerforge/
 │   │   ├── services/           # typed API client (axios, CSRF, error normalisation)
 │   │   ├── hooks/ lib/ types/  # data loading, helpers, API types
 │   │   └── test/               # Vitest setup + render helpers
+│   ├── e2e/                    # Playwright journey test (fixture PDF generated into e2e/.generated/)
 │   ├── package.json
+│   ├── playwright.config.ts    # starts Django + Vite for E2E
 │   └── vite.config.ts          # dev proxy /api -> Django, test config
 ├── docs/                       # architecture, API, security notes
-├── scripts/                    # sample PDF generator, API smoke test
-├── .github/workflows/          # CI
+├── scripts/                    # synthetic PDF generators, API smoke test
+├── .github/workflows/          # Backend CI, Frontend CI, E2E
 ├── docker-compose.yml
 └── .env.example
 ```
@@ -130,6 +135,25 @@ Run the backend at the same time (Docker Compose or `python manage.py runserver`
 The dev server proxies `/api` to Django, so the browser sees a single origin and
 the session/CSRF cookies work without cross-site settings. Keep
 `CSRF_TRUSTED_ORIGINS=http://localhost:5173` in `.env`.
+
+### End-to-end tests (Playwright)
+
+Needs PostgreSQL with migrations applied and the backend virtualenv active
+(Playwright starts Django and Vite itself, or reuses ones already running):
+
+```bash
+python scripts/make_e2e_resume_pdf.py frontend/e2e/.generated/e2e-resume.pdf   # synthetic resume
+cd frontend
+npx playwright install chromium     # once
+npm run e2e
+```
+
+The single journey test registers a user, uploads the synthetic PDF, creates a
+job, checks the score is exactly 60.0, downloads the report, adds a skill,
+checks 80.0, compares the two analyses (+20.0, Kubernetes "Gained"), then logs in
+as a second user and confirms both the page and the API return "not found".
+Set `E2E_PYTHON` if your Python executable isn't `python`. CI runs it in
+`.github/workflows/e2e.yml`.
 
 ### One-command verification (Docker)
 
