@@ -69,3 +69,14 @@ class TestSecurityHeaders:
         assert response.status_code == 200
         assert "Content-Security-Policy" not in response
         assert "Permissions-Policy" in response
+
+
+def test_static_files_are_world_readable_but_uploads_stay_private(settings):
+    from django.contrib.staticfiles.storage import staticfiles_storage
+
+    # nginx (a different OS user) must read collected static files...
+    assert staticfiles_storage.file_permissions_mode == 0o644
+    assert staticfiles_storage.directory_permissions_mode == 0o755
+    # ...while the global upload modes stay private.
+    assert settings.FILE_UPLOAD_PERMISSIONS == 0o600
+    assert settings.FILE_UPLOAD_DIRECTORY_PERMISSIONS == 0o700

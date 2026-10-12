@@ -111,6 +111,17 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Static files (admin/Swagger CSS and JS) are public and are served by nginx,
+# which runs as a different user. Give them world-readable modes explicitly:
+# otherwise they inherit the private FILE_UPLOAD_* modes below (0600/0700).
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "OPTIONS": {"file_permissions_mode": 0o644, "directory_permissions_mode": 0o755},
+    },
+}
+
 # Resumes are stored here and are NEVER served by a public URL. There is
 # deliberately no MEDIA_URL route for this directory.
 PRIVATE_MEDIA_ROOT = Path(env("PRIVATE_MEDIA_ROOT", default="private_media"))
