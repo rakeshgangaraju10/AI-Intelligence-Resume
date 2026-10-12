@@ -4,9 +4,9 @@ CareerForge lets candidates upload a PDF resume, review the information extracte
 from it, and compare it against job descriptions with an explainable,
 deterministic matching score.
 
-> **Status:** Backend CI (200 tests, 97% coverage) and Frontend CI (32 tests) green on
-> commit `fd36bd6`, including the Stage 7 comparison/report features. The Playwright E2E
-> journey is the last Stage 7 check still being fixed. Nothing has been deployed.
+> **Status:** Stages 1–7 verified in CI on commit `44620ee`: Backend CI #9 (200 tests,
+> 97% coverage, no warnings), Frontend CI #5 (32 tests), E2E #4 (full Playwright journey in
+> Chromium, passed). Nothing has been deployed yet (Stage 8).
 
 ## What's implemented
 
