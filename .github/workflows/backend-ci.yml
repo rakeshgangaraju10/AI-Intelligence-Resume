@@ -109,3 +109,21 @@ jobs:
             echo "## Coverage"
             coverage report --format=markdown || echo "coverage report unavailable"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Annotations show on the public run page (no sign-in needed), so results
+      # can be read without opening the logs.
+      - name: Annotate results
+        if: always()
+        run: |
+          esc() { sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          [ -s pytest-output.txt ] || exit 0
+          result=$(grep -E "^=+ .*(passed|failed|error).* =+$" pytest-output.txt | tail -n 1 | tr -d '=' | tr -s ' \n' ' ')
+          total=$(coverage report 2>/dev/null | grep -E "^TOTAL" | tr -s ' \n' ' ')
+          echo "::notice title=pytest::${result} | coverage ${total}"
+          grep -E "^(FAILED|ERROR) " pytest-output.txt | head -n 10 | while read -r line; do
+            echo "::error title=pytest::$(echo "$line" | cut -c1-300)"
+          done
+          if grep -q "warnings summary" pytest-output.txt; then
+            body=$(sed -n '/warnings summary/,/-- Docs/p' pytest-output.txt | head -n 25 | esc)
+            echo "::warning title=pytest warnings::${body}"
+          fi

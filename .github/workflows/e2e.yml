@@ -89,6 +89,19 @@ jobs:
             echo "Playwright version: $(npx playwright --version 2>/dev/null || echo unknown)"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Annotate results
+        if: always()
+        working-directory: frontend
+        run: |
+          esc() { sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          [ -s e2e-output.txt ] || exit 0
+          summary=$(grep -E "^\s*[0-9]+ (passed|failed|flaky|skipped)" e2e-output.txt | tr -s ' \n' ' ')
+          echo "::notice title=playwright::${summary:-no summary line}"
+          if grep -qE "^\s*[0-9]+ failed|Error:" e2e-output.txt; then
+            body=$(grep -E -m1 -A 30 "(✘|Error:|Timed out|webServer)" e2e-output.txt | cut -c1-200 | esc)
+            echo "::error title=playwright failure::${body}"
+          fi
+
       - name: Upload report and traces on failure
         if: failure()
         uses: actions/upload-artifact@v4
