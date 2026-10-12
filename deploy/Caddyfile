@@ -1,0 +1,6 @@
+# Automatic HTTPS (Let's Encrypt) in front of the nginx "frontend" container.
+# DOMAIN comes from .env.production, e.g. careerforge-demo.duckdns.org
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy frontend:80
+}

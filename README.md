@@ -219,6 +219,7 @@ headers, cookie flags, static files, the upload size limit and
 `check --deploy`. It also loads the built SPA in Chromium to confirm the CSP
 doesn't block it. Step-by-step guide, HTTPS setup and pre-launch checklist:
 [docs/deployment.md](docs/deployment.md).
+One-server public setup with automatic HTTPS: [docs/deploy-oracle-cloud.md](docs/deploy-oracle-cloud.md).
 
 ## License
 

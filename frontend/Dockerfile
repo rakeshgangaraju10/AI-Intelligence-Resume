@@ -9,6 +9,9 @@ COPY package.json package-lock.json* ./
 RUN if [ -f package-lock.json ]; then npm ci --no-audit --no-fund; \
     else npm install --no-audit --no-fund; fi
 COPY . .
+# VITE_DEMO_MODE=true shows the "public demo: use a sample resume" banner.
+ARG VITE_DEMO_MODE=false
+ENV VITE_DEMO_MODE=${VITE_DEMO_MODE}
 RUN npm run build
 
 FROM nginx:1.28-alpine

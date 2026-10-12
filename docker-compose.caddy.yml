@@ -1,0 +1,33 @@
+# Add-on for a single public server: Caddy terminates HTTPS on ports 80/443
+# and gets certificates automatically. Use together with docker-compose.prod.yml:
+#
+#   docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml \
+#     --env-file .env.production up -d --build
+#
+# Requires DOMAIN in .env.production and DRF_NUM_PROXIES=2 (Caddy + nginx).
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env.production}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificates (keep this volume)
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+  frontend:
+    # Only Caddy is public; nginx is reachable inside the compose network only.
+    ports: !reset []
+    build:
+      args:
+        VITE_DEMO_MODE: ${VITE_DEMO_MODE:-false}
+
+volumes:
+  caddy_data:
+  caddy_config:

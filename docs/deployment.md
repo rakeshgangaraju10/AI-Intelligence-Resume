@@ -7,6 +7,10 @@
 > `check --deploy`, and a Chromium page load under the production CSP. That run is
 > plain HTTP on a CI runner, not a public deployment.
 
+**Quickest path to a public HTTPS site:** [deploy-oracle-cloud.md](deploy-oracle-cloud.md)
+covers a free Oracle Cloud server, a DuckDNS domain, and Caddy for automatic HTTPS
+via `docker-compose.caddy.yml`.
+
 ## What runs in production
 
 ```
