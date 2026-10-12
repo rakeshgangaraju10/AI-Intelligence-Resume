@@ -1,6 +1,6 @@
 # Security notes
 
-Status of each control as of Stage 7. "Tested" means a pytest test exercises it.
+Status of each control as of Stage 8. "Tested" means a pytest test exercises it.
 
 ## Implemented
 
@@ -50,14 +50,30 @@ Status of each control as of Stage 7. "Tested" means a pytest test exercises it.
 
 The HTML pages served by Django (admin, Swagger UI) don't get the deny-all CSP
 because they need their own scripts; the SPA's CSP is set by whatever serves the
-built frontend (Stage 8).
+built frontend: nginx in production (see below).
+
+## Production web tier (Stage 8)
+
+| Control | Where | Checked in CI |
+|---|---|---|
+| SPA served with CSP `default-src 'self'` (no inline scripts, no third-party origins), `frame-ancestors 'none'`, nosniff, `X-Frame-Options: DENY`, Referrer-Policy, Permissions-Policy, COOP | `frontend/nginx/spa-headers.conf` | ✓ (CSP, X-Frame-Options) |
+| nginx version hidden (`server_tokens off`) | `frontend/nginx/default.conf.template` | ✓ |
+| Request bodies over 6 MB rejected by nginx before reaching Django | same | ✓ |
+| Resume files live on a volume mounted only into the backend container; nginx has no route to them | `docker-compose.prod.yml` | review |
+| Database not published on the host | same | review |
+| Session/CSRF cookies `Secure` + `SameSite=Lax` in production | `settings/production.py` | ✓ (CSRF cookie) |
+| Rate limits key on the real client IP behind proxies (`DRF_NUM_PROXIES`) | same | — |
+| `manage.py check --deploy` has no errors | CI | ✓ |
+| Backend container runs as a non-root user | `backend/Dockerfile` | review |
+
+The SPA CSP doesn't cover `/admin/` or `/api/v1/docs/`: Django serves those
+pages and Swagger UI loads its assets from a CDN. Restrict admin/docs access by
+network in production if possible.
 
 ## Known gaps (tracked for later stages)
 
 - **Throttle storage**: LocMem cache is per process. Production with several
-  workers needs a shared cache (`CACHE_URL=redis://…`).
-- **Proxy body limit**: configure `client_max_body_size` (nginx) or equivalent so
-  oversized uploads are rejected before reaching Django.
+  workers needs a shared cache (`CACHE_URL=redis://…` plus the `redis` package).
 - **Malware scanning** of uploads is not performed. PDFs are only parsed, never
   rendered to users or executed.
 - **Extracted text retention**: raw text is stored to support parsing and editing.

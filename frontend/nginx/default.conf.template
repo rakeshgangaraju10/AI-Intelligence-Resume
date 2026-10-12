@@ -1,0 +1,65 @@
+# CareerForge production web server (inside the "frontend" container).
+# Rendered to /etc/nginx/conf.d/default.conf by the official image's entrypoint.
+# TLS is terminated in front of this container (platform load balancer, Caddy,
+# or a host nginx/certbot); see docs/deployment.md.
+
+# Keep the original scheme if an outer HTTPS proxy already set it, otherwise use ours.
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
+# BACKEND_UPSTREAM is filled in at container start by the nginx image's
+# envsubst template step (default backend:8000, the compose service name).
+upstream django {
+    server ${BACKEND_UPSTREAM};
+}
+
+server {
+    listen 80;
+    server_name _;
+    server_tokens off;
+
+    # Slightly above RESUME_MAX_UPLOAD_BYTES (5 MB) so Django returns its own
+    # friendly "file too large" error; anything bigger is cut off here.
+    client_max_body_size 6m;
+
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # --- Django: API, admin, and admin/Swagger static files -------------------
+    location /api/ {
+        proxy_pass http://django;
+        include /etc/nginx/proxy_params_careerforge;
+    }
+
+    location /admin/ {
+        proxy_pass http://django;
+        include /etc/nginx/proxy_params_careerforge;
+    }
+
+    location /static/ {
+        alias /srv/static/;
+        expires 7d;
+        add_header Cache-Control "public";
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    # --- SPA -----------------------------------------------------------------
+    # Vite fingerprints built files, so they can be cached forever.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/spa-headers.conf;
+        try_files $uri =404;
+    }
+
+    # Client-side routes (/dashboard, /analyses/7, ...) all serve index.html.
+    location / {
+        add_header Cache-Control "no-cache";
+        include /etc/nginx/snippets/spa-headers.conf;
+        try_files $uri /index.html;
+    }
+}

@@ -102,6 +102,20 @@ jobs:
             echo "::error title=playwright failure::${body}"
           fi
 
+      # Screenshots for the README (synthetic data) and the package-lock.json
+      # this run resolved, so it can be committed for reproducible installs.
+      - name: Upload screenshots and lockfile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-and-lockfile
+          path: |
+            frontend/e2e/.generated/screenshots/
+            frontend/package-lock.json
+          if-no-files-found: warn
+          include-hidden-files: true   # screenshots live under e2e/.generated/
+          retention-days: 14
+
       - name: Upload report and traces on failure
         if: failure()
         uses: actions/upload-artifact@v4

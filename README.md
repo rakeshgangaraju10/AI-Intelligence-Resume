@@ -1,12 +1,34 @@
 # CareerForge — AI-Powered Resume Intelligence Platform
 
-CareerForge lets candidates upload a PDF resume, review the information extracted
-from it, and compare it against job descriptions with an explainable,
+CareerForge lets candidates upload a PDF resume, review and correct what was
+extracted from it, and compare it with job descriptions using an explainable,
 deterministic matching score.
+
+1. **Upload** a text-based PDF. It is validated, stored privately, and parsed into
+   skills, education, experience, projects and certifications, each with the
+   resume line it came from.
+2. **Review**: every parsed item can be confirmed, edited or removed, and the
+   app records whether each item came from the parser or from the user.
+3. **Match** against a job's required and preferred skills to get a 0–100
+   score. Each skill comes back as matched, missing or related, with evidence and
+   an explanation. The score measures skill overlap; it is not a hiring prediction.
+4. **Track**: every analysis is saved as a snapshot. Compare two versions skill
+   by skill, then download a Markdown report or print the page.
+
+The "intelligence" is rule-based NLP: section detection, a skill dictionary with
+aliases, and related-skill groups. Scoring is a documented formula. No resume
+data is sent to any external AI service.
 
 > **Status:** Stages 1–7 verified in CI on commit `44620ee`: Backend CI #9 (200 tests,
 > 97% coverage, no warnings), Frontend CI #5 (32 tests), E2E #4 (full Playwright journey in
-> Chromium, passed). Nothing has been deployed yet (Stage 8).
+> Chromium, passed). Stage 8 (production Docker stack, deployment guide) is built and its
+> CI checks are pending. **Not deployed**: there is no public URL yet.
+
+## Screenshots
+
+Screenshots are generated automatically by the end-to-end test, using synthetic
+data only. Each E2E run uploads them as the `screenshots-and-lockfile`
+artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
 
 ## What's implemented
 
@@ -27,13 +49,15 @@ deterministic matching score.
 | Security hardening (Stage 7) | Per-user rate limit on running analyses; deny-all CSP and Permissions-Policy on API responses |
 | Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), Vitest + Testing Library component tests, Playwright end-to-end journey in Chromium, GitHub Actions CI for all three |
 
-Not yet built: production deployment (Stage 8), PDF report export (reports are
-Markdown; use Print → Save as PDF from the results page), optional semantic matching.
+| Production setup (Stage 8) | nginx + gunicorn + PostgreSQL via `docker-compose.prod.yml`, SPA security headers (CSP), upload size limit at the proxy, CI smoke test of the running stack |
+
+Not built: server-side PDF reports (reports are Markdown; use Print → Save as PDF),
+OCR for scanned resumes, semantic/embedding-based matching, a public deployment.
 
 ## Tech stack
 
 Python 3.12 · Django 5.2 LTS · Django REST Framework 3.16 · PostgreSQL 16 ·
-PyMuPDF · drf-spectacular · pytest · Docker Compose · GitHub Actions.
+PyMuPDF · drf-spectacular · gunicorn · nginx · pytest · Docker Compose · GitHub Actions.
 Frontend: React 19 · TypeScript · Vite · Tailwind CSS 4 · React Router 7 ·
 React Hook Form · Axios · Vitest + Testing Library · Playwright (E2E).
 
@@ -67,11 +91,15 @@ careerforge/
 │   ├── e2e/                    # Playwright journey test (fixture PDF generated into e2e/.generated/)
 │   ├── package.json
 │   ├── playwright.config.ts    # starts Django + Vite for E2E
+│   ├── Dockerfile, nginx/      # production image: built SPA + reverse proxy
 │   └── vite.config.ts          # dev proxy /api -> Django, test config
 ├── docs/                       # architecture, API, security notes
 ├── scripts/                    # synthetic PDF generators, API smoke test
-├── .github/workflows/          # Backend CI, Frontend CI, E2E
-├── docker-compose.yml
+├── .github/workflows/          # Backend CI, Frontend CI, E2E, Production stack
+├── docker-compose.yml          # development stack
+├── docker-compose.prod.yml     # production stack (nginx + gunicorn + Postgres)
+├── .env.production.example
+├── LICENSE                     # AGPL-3.0
 └── .env.example
 ```
 
@@ -181,14 +209,22 @@ on delete and `HTTP 404` afterwards.
 
 Interactive API docs: <http://localhost:8000/api/v1/docs/> · Admin: <http://localhost:8000/admin/>
 
-## Licensing note (decide before publishing)
+## Production
 
-PyMuPDF is dual-licensed **AGPL-3.0 / commercial**. If this project uses PyMuPDF
-and is published or run as a network service, the AGPL obligations apply to the
-combined work. The simplest options are (a) license CareerForge under AGPL-3.0,
-or (b) swap the extractor in `pdf_parser.py` for an MIT/BSD library such as
-`pypdf` or `pdfminer.six` (the parser is isolated behind one function for this
-reason). No `LICENSE` file is committed until you choose.
+`docker-compose.prod.yml` runs PostgreSQL, Django under gunicorn, and nginx.
+nginx serves the built SPA and proxies `/api/` and `/admin/`. CI builds the
+stack, starts it, and checks it through nginx: health, SPA routing, security
+headers, cookie flags, static files, the upload size limit and
+`check --deploy`. It also loads the built SPA in Chromium to confirm the CSP
+doesn't block it. Step-by-step guide, HTTPS setup and pre-launch checklist:
+[docs/deployment.md](docs/deployment.md).
+
+## License
+
+[GNU AGPL-3.0](LICENSE). CareerForge uses PyMuPDF, which is licensed under
+AGPL-3.0 (or commercially), so the project is released under the same license.
+If you run a modified version as a network service, the AGPL requires you to
+offer its source to the service's users.
 
 ## Documentation
 
@@ -196,3 +232,5 @@ reason). No `LICENSE` file is committed until you choose.
 - [docs/api-documentation.md](docs/api-documentation.md) — every implemented endpoint
 - [docs/security.md](docs/security.md) — implemented controls and known gaps
 - [docs/matching-algorithm.md](docs/matching-algorithm.md) — scoring formula, worked example, limitations
+- [docs/deployment.md](docs/deployment.md) — production stack, HTTPS, backups, checklist
+- [docs/project-summary.md](docs/project-summary.md) — resume bullets and interview talking points

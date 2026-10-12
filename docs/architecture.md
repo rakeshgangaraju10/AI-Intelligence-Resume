@@ -136,3 +136,11 @@ src/
 | Config-driven section editor | Education, experience, projects and certifications share one tested component instead of four near-identical ones. |
 | Provenance always visible | "Detected · please review", "Confirmed" and "Added by you" badges mirror `source` / `is_verified`. |
 | Accessibility | Labelled inputs with `aria-invalid` / `aria-describedby`, visible focus, skip link, keyboard-operable dropzone, `role="alert"` for errors, progress bars with ARIA values, page titles per route. |
+
+## Production topology (Stage 8)
+
+`docker-compose.prod.yml`: **nginx** (frontend image) → **gunicorn/Django**
+(backend image, production settings) → **PostgreSQL**. nginx serves the built
+SPA and collected static files, and proxies `/api/` and `/admin/`, so the browser
+talks to a single origin. HTTPS terminates in front of nginx (Caddy or a
+platform load balancer). Details and trade-offs: [deployment.md](deployment.md).

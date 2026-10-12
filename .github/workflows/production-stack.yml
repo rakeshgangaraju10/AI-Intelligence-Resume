@@ -1,0 +1,141 @@
+name: Production stack
+
+# Builds the production images, starts docker-compose.prod.yml and checks the
+# running stack through nginx. This proves the containers work together; it is
+# not a deployment.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  compose-smoke-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Create a throwaway .env.production
+        run: |
+          cp .env.production.example .env.production
+          secret=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+          sed -i \
+            -e "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${secret}|" \
+            -e "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=ci-$(python3 -c 'import secrets; print(secrets.token_hex(8))')|" \
+            -e "s|^DJANGO_ALLOWED_HOSTS=.*|DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1|" \
+            -e "s|^CSRF_TRUSTED_ORIGINS=.*|CSRF_TRUSTED_ORIGINS=http://localhost:8080|" \
+            -e "s|^DJANGO_SECURE_SSL_REDIRECT=.*|DJANGO_SECURE_SSL_REDIRECT=False|" \
+            .env.production
+
+      - name: Build and start the stack
+        id: up
+        run: |
+          set -o pipefail
+          docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build 2>&1 | tail -n 40 | tee up-output.txt
+
+      - name: Wait for the API through nginx
+        id: wait
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8080/api/v1/health/ >/dev/null 2>&1; then
+              echo "ready after ${i} attempts"; exit 0
+            fi
+            sleep 2
+          done
+          echo "stack did not become healthy"; exit 1
+
+      - name: Smoke checks
+        id: smoke
+        run: |
+          set -u
+          fail=0
+          : > smoke-output.txt
+          check() {  # check <description> <command...>
+            local desc="$1"; shift
+            if "$@" >/dev/null 2>&1; then echo "PASS  $desc" | tee -a smoke-output.txt
+            else echo "FAIL  $desc" | tee -a smoke-output.txt; fail=1; fi
+          }
+          base=http://localhost:8080
+          check "health endpoint returns ok"            sh -c "curl -fsS $base/api/v1/health/ | grep -q '\"status\"'"
+          check "SPA index served"                      sh -c "curl -fsS $base/ | grep -q '<div id=\"root\">'"
+          check "client-side route falls back to SPA"   sh -c "curl -fsS $base/analyses/compare | grep -q '<div id=\"root\">'"
+          check "SPA has Content-Security-Policy"       sh -c "curl -fsSI $base/ | grep -qi \"^content-security-policy: default-src 'self'\""
+          check "SPA has X-Frame-Options DENY"          sh -c "curl -fsSI $base/ | grep -qi '^x-frame-options: DENY'"
+          check "nginx version hidden"                  sh -c "! curl -fsSI $base/ | grep -qi '^server: nginx/'"
+          check "built JS asset is cacheable"           sh -c "asset=\$(curl -fsS $base/ | grep -o '/assets/[^\"]*\\.js' | head -n1) && curl -fsSI $base\$asset | grep -qi 'immutable'"
+          check "API responses keep deny-all CSP"       sh -c "curl -fsSI $base/api/v1/health/ | grep -qi \"^content-security-policy: default-src 'none'\""
+          check "API requires login"                    sh -c "test \$(curl -s -o /dev/null -w '%{http_code}' $base/api/v1/resumes/) = 403"
+          check "CSRF cookie is Secure + SameSite=Lax"  sh -c "curl -fsS -D - -o /dev/null $base/api/v1/auth/csrf/ | grep -i '^set-cookie: csrftoken' | grep -i 'secure' | grep -qi 'samesite=lax'"
+          check "admin login page via proxy"            sh -c "curl -fsS $base/admin/login/ | grep -qi 'django'"
+          check "collected static files served"         sh -c "curl -fsSI $base/static/admin/css/base.css | grep -q '200'"
+          check "oversized upload rejected by nginx"    sh -c "head -c 7000000 /dev/zero > /tmp/big.bin && test \$(curl -s -o /dev/null -w '%{http_code}' -X POST --data-binary @/tmp/big.bin $base/api/v1/resumes/) = 413"
+          exit $fail
+
+      - name: Django deployment checks
+        id: deploycheck
+        if: ${{ !cancelled() && steps.wait.outcome == 'success' }}
+        run: |
+          set -o pipefail
+          # SSL redirect is off only for this HTTP-only CI run, so allow that warning.
+          docker compose -f docker-compose.prod.yml --env-file .env.production exec -T backend \
+            python manage.py check --deploy --fail-level ERROR 2>&1 | tee deploycheck-output.txt
+
+      - uses: actions/setup-node@v5
+        if: ${{ !cancelled() && steps.wait.outcome == 'success' }}
+        with:
+          node-version: "22"
+
+      - name: Browser check through nginx (CSP)
+        id: browser
+        if: ${{ !cancelled() && steps.wait.outcome == 'success' }}
+        working-directory: frontend
+        run: |
+          set -o pipefail
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.prod.config.ts 2>&1 | tee browser-output.txt
+
+      - name: Publish summary
+        if: always()
+        env:
+          UP: ${{ steps.up.outcome }}
+          WAIT: ${{ steps.wait.outcome }}
+          SMOKE: ${{ steps.smoke.outcome }}
+          DEPLOYCHECK: ${{ steps.deploycheck.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: |
+          esc() { sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          {
+            echo "## Production stack (docker-compose.prod.yml)"
+            echo "| Step | Result |"
+            echo "|---|---|"
+            echo "| Build + start | ${UP} |"
+            echo "| API healthy through nginx | ${WAIT} |"
+            echo "| Smoke checks | ${SMOKE} |"
+            echo "| manage.py check --deploy | ${DEPLOYCHECK} |"
+            echo "| SPA renders under CSP (Chromium) | ${BROWSER} |"
+            if [ -s smoke-output.txt ]; then echo '```'; cat smoke-output.txt; echo '```'; fi
+            if [ -s deploycheck-output.txt ]; then echo "### check --deploy"; echo '```'; cat deploycheck-output.txt; echo '```'; fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          passed=$(grep -c '^PASS' smoke-output.txt 2>/dev/null || true)
+          failed=$(grep -c '^FAIL' smoke-output.txt 2>/dev/null || true)
+          echo "::notice title=production stack::up=${UP} healthy=${WAIT} smoke=${passed:-0} passed/${failed:-0} failed check-deploy=${DEPLOYCHECK} browser=${BROWSER}"
+          if [ "${failed:-0}" != "0" ]; then
+            echo "::error title=smoke failures::$(grep '^FAIL' smoke-output.txt | esc)"
+          fi
+          if [ -s deploycheck-output.txt ]; then
+            echo "::notice title=check --deploy::$(cat deploycheck-output.txt | head -n 20 | esc)"
+          fi
+
+      - name: Container logs on failure
+        if: failure()
+        run: |
+          logs=$(docker compose -f docker-compose.prod.yml --env-file .env.production logs --no-color --tail=40 2>&1 | tail -n 60)
+          echo "$logs"
+          echo "::error title=container logs::$(echo "$logs" | sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}' | cut -c1-6000)"
+
+      - name: Stop the stack
+        if: always()
+        run: docker compose -f docker-compose.prod.yml --env-file .env.production down -v

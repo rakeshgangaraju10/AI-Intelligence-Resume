@@ -16,6 +16,12 @@ import { expect, test, type Page } from "@playwright/test";
  */
 const RESUME_PDF = fileURLToPath(new URL("./.generated/e2e-resume.pdf", import.meta.url));
 const PASSWORD = "E2e-Correct-Horse-42";
+// README screenshots (synthetic data only); uploaded by the E2E workflow.
+const SHOTS = fileURLToPath(new URL("./.generated/screenshots/", import.meta.url));
+
+async function shot(page: Page, name: string) {
+  await page.screenshot({ path: `${SHOTS}${name}.png`, fullPage: true });
+}
 
 function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
@@ -51,6 +57,7 @@ test("resume analysis journey", async ({ page }) => {
 
   await test.step("upload the synthetic resume", async () => {
     await page.goto("/resumes/upload");
+    await shot(page, "01-upload");
     await page.getByTestId("resume-file-input").setInputFiles(RESUME_PDF);
     await page.getByRole("button", { name: "Upload and analyze" }).click();
     await page.waitForURL(/\/resumes\/[0-9a-f-]{36}$/);
@@ -59,6 +66,7 @@ test("resume analysis journey", async ({ page }) => {
       await expect(page.getByRole("button", { name: `Remove ${skill}`, exact: true })).toBeVisible();
     }
     resumeId = page.url().split("/").pop()!;
+    await shot(page, "02-resume-review");
   });
 
   await test.step("create a job description", async () => {
@@ -70,6 +78,7 @@ test("resume analysis journey", async ({ page }) => {
     await page.getByRole("button", { name: "Save job" }).click();
     await page.waitForURL(/\/jobs\/\d+$/);
     jobId = page.url().split("/").pop()!;
+    await shot(page, "03-job");
   });
 
   await test.step("first analysis scores 60.0 with Kubernetes missing", async () => {
@@ -78,6 +87,7 @@ test("resume analysis journey", async ({ page }) => {
     await expect(page.getByText(/not a probability of being hired/i)).toBeVisible();
     await expect(page.getByRole("heading", { name: "Missing required skills (1)" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Matched required skills (3)" })).toBeVisible();
+    await shot(page, "04-analysis");
   });
 
   await test.step("download the Markdown report", async () => {
@@ -103,6 +113,8 @@ test("resume analysis journey", async ({ page }) => {
 
   await test.step("compare the two analyses from history", async () => {
     await page.goto("/analyses");
+    await expect(page.getByRole("checkbox", { name: /for comparison/i })).toHaveCount(2);
+    await shot(page, "06-history");
     const boxes = page.getByRole("checkbox", { name: /for comparison/i });
     await expect(boxes).toHaveCount(2);
     await boxes.nth(0).check();
@@ -112,6 +124,7 @@ test("resume analysis journey", async ({ page }) => {
     await expect(page.getByText("+20.0", { exact: true })).toBeVisible();
     await expect(page.getByRole("row", { name: /Kubernetes/ })).toContainText("Gained");
     await expect(page.getByRole("row", { name: /Python/ })).toContainText("No change");
+    await shot(page, "05-compare");
   });
 
   await test.step("another user cannot see these analyses", async () => {

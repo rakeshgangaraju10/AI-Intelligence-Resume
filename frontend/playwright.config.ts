@@ -13,6 +13,7 @@ const PYTHON = process.env.E2E_PYTHON ?? "python";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "prod-smoke.spec.ts", // run by playwright.prod.config.ts
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: false,

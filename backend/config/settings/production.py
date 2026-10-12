@@ -1,6 +1,6 @@
 """Production settings. Expects to run behind an HTTPS-terminating reverse proxy."""
 from .base import *  # noqa: F401,F403
-from .base import env
+from .base import REST_FRAMEWORK, env
 
 DEBUG = False
 
@@ -22,4 +22,12 @@ CSRF_COOKIE_SAMESITE = env("CSRF_COOKIE_SAMESITE", default="Lax")
 # Redis/Memcached when running more than one process; LocMem is per-process.
 CACHES = {
     "default": env.cache("CACHE_URL", default="locmemcache://"),
+}
+
+# Behind nginx every request comes from the proxy's address. Tell DRF how many
+# proxies sit in front of Django so rate limits key on the client IP taken
+# from X-Forwarded-For (1 = our nginx; 2 = nginx behind a platform load balancer).
+REST_FRAMEWORK = {
+    **REST_FRAMEWORK,
+    "NUM_PROXIES": env.int("DRF_NUM_PROXIES", default=1),
 }

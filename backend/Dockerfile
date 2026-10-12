@@ -17,7 +17,7 @@ COPY . .
 
 # Run as an unprivileged user; uploads go to a directory only this user can read.
 RUN useradd --create-home --uid 1000 appuser \
-    && mkdir -p /app/private_media \
+    && mkdir -p /app/private_media /app/staticfiles \
     && chown -R appuser:appuser /app \
     && chmod 700 /app/private_media
 USER appuser
