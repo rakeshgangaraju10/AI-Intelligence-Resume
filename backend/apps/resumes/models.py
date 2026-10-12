@@ -180,3 +180,8 @@ class ResumeCertification(ResumeEntry):
 
     def __str__(self) -> str:
         return self.name
+
+
+# Module-level aliases so settings can reference these choices by import path
+# (used by drf-spectacular's ENUM_NAME_OVERRIDES).
+ResumeStatus = Resume.Status

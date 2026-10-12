@@ -70,3 +70,9 @@ class JobRequirement(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.kind}, w{self.weight})"
+
+
+# Module-level aliases for import-path references (drf-spectacular ENUM_NAME_OVERRIDES).
+ExperienceLevel = JobDescription.ExperienceLevel
+RequirementKind = JobRequirement.Kind
+RequirementSource = JobRequirement.Source

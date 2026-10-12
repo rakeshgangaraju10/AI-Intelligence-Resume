@@ -72,3 +72,7 @@ class AnalysisSkillResult(models.Model):
 
     def __str__(self) -> str:
         return f"{self.skill_name}: {self.status}"
+
+
+# Module-level alias for import-path references (drf-spectacular ENUM_NAME_OVERRIDES).
+SkillResultStatus = AnalysisSkillResult.Status

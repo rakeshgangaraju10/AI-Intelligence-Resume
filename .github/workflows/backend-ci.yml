@@ -45,16 +45,28 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements-dev.txt
 
+      # Each check tees its output to a file so the summary step can show the
+      # reason for a failure on the run's Summary page. Later checks still run
+      # after an earlier one fails (`!cancelled()`), so one problem can't hide others.
       - name: Django system checks
-        run: python manage.py check
+        run: |
+          set -o pipefail
+          python manage.py check 2>&1 | tee check-output.txt
 
       - name: Migrations are up to date
-        run: python manage.py makemigrations --check --dry-run
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          python manage.py makemigrations --check --dry-run 2>&1 | tee migrations-output.txt
 
       - name: OpenAPI schema generates without warnings
-        run: python manage.py spectacular --fail-on-warn --file /tmp/schema.yml
+        if: ${{ !cancelled() }}
+        run: |
+          set -o pipefail
+          python manage.py spectacular --fail-on-warn --file /tmp/schema.yml 2>&1 | tee schema-output.txt
 
       - name: Run tests
+        if: ${{ !cancelled() }}
         run: |
           set -o pipefail
           pytest --cov=apps --cov-report=term-missing 2>&1 | tee pytest-output.txt
@@ -65,9 +77,18 @@ jobs:
         if: always()
         run: |
           {
+            for f in check-output.txt migrations-output.txt schema-output.txt; do
+              if [ -s "$f" ] && grep -qiE "error|warning|changes detected|Traceback" "$f"; then
+                echo "## Problems in ${f%-output.txt} step"
+                echo '```'
+                tail -n 40 "$f"
+                echo '```'
+              fi
+            done
             echo "## Test results"
             echo '```'
             grep -E "^=+ .*(passed|failed|error).* =+$" pytest-output.txt | tail -n 1 || echo "no pytest summary line found"
+            grep -E "^(FAILED|ERROR) " pytest-output.txt | head -n 30 || true
             echo '```'
             echo "## Coverage"
             coverage report --format=markdown || echo "coverage report unavailable"

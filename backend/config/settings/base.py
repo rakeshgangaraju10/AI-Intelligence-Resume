@@ -168,6 +168,17 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "COMPONENT_SPLIT_REQUEST": True,  # correct multipart schema for file uploads
+    # Several models have choice fields with the same name but different values
+    # ("status", "source", "kind"). Name each enum explicitly so the schema is
+    # stable and drf-spectacular doesn't emit enum-collision warnings.
+    "ENUM_NAME_OVERRIDES": {
+        "ResumeStatusEnum": "apps.resumes.models.ResumeStatus",
+        "ResumeEntrySourceEnum": "apps.resumes.models.EntrySource",
+        "JobRequirementSourceEnum": "apps.jobs.models.RequirementSource",
+        "RequirementKindEnum": "apps.jobs.models.RequirementKind",
+        "SkillResultStatusEnum": "apps.analyses.models.SkillResultStatus",
+        "ExperienceLevelEnum": "apps.jobs.models.ExperienceLevel",
+    },
 }
 
 # --- Logging -------------------------------------------------------------------
