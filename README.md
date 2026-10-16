@@ -19,20 +19,23 @@ The "intelligence" is rule-based NLP: section detection, a skill dictionary with
 aliases, and related-skill groups. Scoring is a documented formula. No resume
 data is sent to any external AI service.
 
-**🌐 Live site: [careerforge-h362.onrender.com](https://careerforge-h362.onrender.com)**. It's hosted on free plans
-(Render + Neon), so the first visit after ~15 idle minutes takes about a minute to wake up.
+**🌐 Live site: [careerforge-h362.onrender.com](https://careerforge-h362.onrender.com)**. It's free to use:
+create an account, upload a resume, and compare it with a job (paste it, pick a sample job, or import
+it from a careers-page link). It's hosted on free plans (Render + Neon); a scheduled ping keeps it
+awake, and if it was asleep the app shows "Starting the server…" and waits about a minute.
 
-> **Status:** All stages verified in CI. Latest fully reported run, on commit `34b033e`:
-> Backend CI #17 (245 tests, 96% coverage), Frontend CI #10 (50 tests), E2E #12 (full
-> Playwright journey in Chromium), and Production stack #8 (Docker Compose stack, plus the
-> single-container image used in production). Deployed on Render's free web service with
-> a Neon Postgres database ([how](docs/deploy-free-render-neon.md)).
+> **Status:** All stages verified in CI. Latest run, on commit `a660e39`: Backend CI #19
+> (254 tests, 96% coverage), Frontend CI #12 (57 tests), E2E #14 (full Playwright journey
+> in Chromium), and Production stack #10 (Docker Compose stack, plus the single-container
+> image the live site runs). Deployed on Render's free web service with a Neon Postgres
+> database ([how](docs/deploy-free-render-neon.md)).
 
 ## Screenshots
 
-Screenshots are generated automatically by the end-to-end test, using synthetic
-data only. Each E2E run uploads them as the `screenshots-and-lockfile`
-artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
+The end-to-end test takes screenshots of the main screens using synthetic data
+only, and uploads them as the `screenshots-and-lockfile` artifact of each E2E run.
+They haven't been added to this README yet. Until then, the live site above is the
+best way to see the app.
 
 ## What's implemented
 
@@ -52,11 +55,12 @@ artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
 | Frontend (Stage 6) | React + TypeScript SPA: landing, register/login, dashboard, drag-and-drop upload with progress, resume review/editing, job descriptions with weighted skills, analysis results with evidence, history, settings |
 | Security hardening (Stage 7) | Per-user rate limit on running analyses; deny-all CSP and Permissions-Policy on API responses |
 | Quality | pytest suite (validation, parsing, API, auth, CSRF, ownership, throttling), Vitest + Testing Library component tests, Playwright end-to-end journey in Chromium, GitHub Actions CI for all three |
-
 | Production setup (Stage 8) | nginx + gunicorn + PostgreSQL via `docker-compose.prod.yml`, SPA security headers (CSP), upload size limit at the proxy, CI smoke test of the running stack |
+| Live deployment | One container on Render's free plan (Django serves the API, admin and React app) with Neon Postgres via `render.yaml`; no PDFs kept (text only, `RESUME_STORE_FILES=False`); password-reset email through Brevo's HTTPS API; keep-awake workflow; the frontend wakes a sleeping server and retries uploads once |
 
 Not built: server-side PDF reports (reports are Markdown; use Print → Save as PDF),
-OCR for scanned resumes, semantic/embedding-based matching, a public deployment.
+OCR for scanned resumes, semantic/embedding-based matching, reading LinkedIn/Indeed job
+pages (they forbid automated access; paste the text instead).
 
 ## Tech stack
 
