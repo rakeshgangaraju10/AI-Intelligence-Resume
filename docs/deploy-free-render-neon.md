@@ -84,6 +84,18 @@ If Render asks for a card at any point, stop and tell me; there's another way to
   admin account already exists, and the password shouldn't sit in settings.
 - Send Claude your address, so the README and your resume bullets can link to the live site.
 
+## Forgot a password?
+
+The site has no "Forgot password" email yet, because sending email needs an email service.
+
+- **Admin password:** Render → careerforge → **Environment** → set
+  `DJANGO_SUPERUSER_EMAIL` (your admin email) and `DJANGO_SUPERUSER_PASSWORD` (a
+  new password: at least 10 characters, not all numbers, not a common word) →
+  **Save, rebuild, and deploy**. The logs show `Admin account password updated.`
+  Log in at `/admin/`, then delete `DJANGO_SUPERUSER_PASSWORD` again.
+- **A normal user's password:** log in to `/admin/` → **Users** → open the user →
+  click **"this form"** under the password field → set a new one.
+
 ## Updating the site
 
 Every push to `main` on GitHub redeploys automatically (`autoDeploy: true`).

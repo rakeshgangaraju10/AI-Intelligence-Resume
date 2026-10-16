@@ -3,12 +3,11 @@
 set -e
 python manage.py migrate --noinput
 
-# Optional: set DJANGO_SUPERUSER_EMAIL, DJANGO_SUPERUSER_PASSWORD and
-# DJANGO_SUPERUSER_FULL_NAME to create an admin on first start (no shell needed).
-if [ -n "${DJANGO_SUPERUSER_EMAIL:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
-  python manage.py createsuperuser --noinput >/dev/null 2>&1 \
-    && echo "Admin account created." || echo "Admin account already exists (or could not be created)."
-fi
+# Optional: set DJANGO_SUPERUSER_EMAIL and DJANGO_SUPERUSER_PASSWORD (and
+# DJANGO_SUPERUSER_FULL_NAME) to create the admin account, or to reset its
+# password, on start. Remove the password variable again after logging in.
+# A rejected (too weak) password is reported but doesn't stop the site.
+python manage.py ensure_admin || echo "Admin account not changed (see message above)."
 
 # Render provides PORT; default 8000 elsewhere.
 exec gunicorn config.wsgi:application \

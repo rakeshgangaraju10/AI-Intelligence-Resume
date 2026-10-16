@@ -201,3 +201,48 @@ class TestAccountSettings:
         assert api_client.patch(ME, {"full_name": "x"}).status_code == 403
         assert api_client.post(self.CHANGE, {}).status_code == 403
         assert api_client.delete(ME, {"password": "x"}).status_code == 403
+
+
+# --- ensure_admin management command (admin create/reset on shell-less hosts) -----------
+
+
+@pytest.mark.django_db
+class TestEnsureAdmin:
+    def _run(self, monkeypatch, **env):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        for key in ("DJANGO_SUPERUSER_EMAIL", "DJANGO_SUPERUSER_PASSWORD", "DJANGO_SUPERUSER_FULL_NAME"):
+            monkeypatch.delenv(key, raising=False)
+        for key, value in env.items():
+            monkeypatch.setenv(key, value)
+        out = StringIO()
+        call_command("ensure_admin", stdout=out)
+        return out.getvalue()
+
+    def test_skips_without_variables(self, monkeypatch):
+        assert "skipping" in self._run(monkeypatch)
+        assert not User.objects.exists()
+
+    def test_creates_then_resets_password(self, monkeypatch):
+        out = self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="owner@example.com",
+                        DJANGO_SUPERUSER_PASSWORD="First-Strong-Pass-91", DJANGO_SUPERUSER_FULL_NAME="Owner")
+        assert "created" in out
+        admin = User.objects.get(email="owner@example.com")
+        assert admin.is_superuser and admin.is_staff and admin.check_password("First-Strong-Pass-91")
+
+        out = self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="OWNER@example.com",
+                        DJANGO_SUPERUSER_PASSWORD="Second-Strong-Pass-92")
+        assert "password updated" in out
+        admin.refresh_from_db()
+        assert admin.check_password("Second-Strong-Pass-92")
+        assert User.objects.count() == 1
+        assert "Second-Strong-Pass-92" not in out
+
+    def test_weak_password_is_rejected_and_nothing_changes(self, monkeypatch):
+        from django.core.management.base import CommandError
+
+        with pytest.raises(CommandError):
+            self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="owner@example.com", DJANGO_SUPERUSER_PASSWORD="123")
+        assert not User.objects.exists()
