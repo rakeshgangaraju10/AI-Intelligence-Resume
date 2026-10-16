@@ -29,7 +29,7 @@ vi.mock("../services/analyses", async (importOriginal) => {
 });
 
 beforeEach(() => {
-  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", date_joined: "2026-01-01T00:00:00Z" });
+  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", college_name: "Example College", graduation_year: 2025, date_joined: "2026-01-01T00:00:00Z" });
   vi.mocked(listResumes).mockResolvedValue({ count: 0, next: null, previous: null, results: [] });
 });
 
@@ -70,6 +70,8 @@ describe("AnalysesPage comparison selection", () => {
     });
     const boxes = await screen.findAllByRole("checkbox", { name: /for comparison/i });
     const compare = screen.getByRole("button", { name: "Compare selected" });
+    expect(screen.getAllByText("2 matched")).toHaveLength(3);
+    expect(screen.getAllByText("1 missing")).toHaveLength(3);
     expect(compare).toBeDisabled();
 
     await userEvent.click(boxes[0]);

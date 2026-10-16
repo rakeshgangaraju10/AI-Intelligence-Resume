@@ -4,6 +4,8 @@ export interface User {
   id: number;
   email: string;
   full_name: string;
+  college_name: string;
+  graduation_year: number | null;
   date_joined: string;
 }
 

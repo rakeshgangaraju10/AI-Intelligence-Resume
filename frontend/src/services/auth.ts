@@ -5,6 +5,14 @@ export interface RegisterPayload {
   full_name: string;
   email: string;
   password: string;
+  college_name: string;
+  graduation_year: number;
+}
+
+export interface ProfileUpdate {
+  full_name: string;
+  college_name: string;
+  graduation_year: number;
 }
 
 export async function fetchCurrentUser(): Promise<User | null> {
@@ -37,8 +45,8 @@ export async function logout(): Promise<void> {
   resetCsrf();
 }
 
-export function updateProfile(fullName: string): Promise<User> {
-  return request(() => api.patch<User>("/auth/me/", { full_name: fullName }));
+export function updateProfile(data: ProfileUpdate): Promise<User> {
+  return request(() => api.patch<User>("/auth/me/", data));
 }
 
 export function changePassword(currentPassword: string, newPassword: string): Promise<void> {

@@ -41,6 +41,9 @@ class User(AbstractUser):
     last_name = None
     email = models.EmailField("email address", unique=True)
     full_name = models.CharField(max_length=150)
+    # Asked at sign-up (required there); blank for admin accounts and older users.
+    college_name = models.CharField("college name", max_length=200, blank=True)
+    graduation_year = models.PositiveSmallIntegerField("year of passing out", null=True, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["full_name"]

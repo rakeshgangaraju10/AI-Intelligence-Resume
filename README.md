@@ -22,13 +22,11 @@ data is sent to any external AI service.
 **🌐 Live site: [careerforge-h362.onrender.com](https://careerforge-h362.onrender.com)**. It's hosted on free plans
 (Render + Neon), so the first visit after ~15 idle minutes takes about a minute to wake up.
 
-> **Status:** All stages verified in CI. Latest run on commit `4e0b3ce`: Backend CI #13
-> (206 tests, 96% coverage), E2E #8 (full Playwright journey in Chromium), and Production
-> stack #4 (Docker Compose stack 13/13 smoke checks; the single-container image used in
-> production built, ran and passed 11/11 checks plus a Chromium CSP check). Frontend CI #7
-> (34 tests) ran on the previous commit; the latest commit didn't touch the frontend.
-> Deployed on Render's free web service with a Neon Postgres database
-> ([how](docs/deploy-free-render-neon.md)).
+> **Status:** All stages verified in CI. Latest fully reported run, on commit `34b033e`:
+> Backend CI #17 (245 tests, 96% coverage), Frontend CI #10 (50 tests), E2E #12 (full
+> Playwright journey in Chromium), and Production stack #8 (Docker Compose stack, plus the
+> single-container image used in production). Deployed on Render's free web service with
+> a Neon Postgres database ([how](docs/deploy-free-render-neon.md)).
 
 ## Screenshots
 
@@ -40,7 +38,7 @@ artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
 
 | Area | Implemented |
 |---|---|
-| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth; profile update, password change, account deletion; forgot-password emails (signed, expiring one-time links) |
+| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth; profile update, password change, account deletion; college name and year of passing out at sign-up; forgot-password emails (signed, expiring one-time links) |
 | Resume upload | `POST /api/v1/resumes/` (multipart) with extension, content-type, size and `%PDF-` signature checks |
 | Text extraction | PyMuPDF; rejects corrupt, password-protected, scanned (no text layer), too-many-pages and oversized-text PDFs with specific error codes |
 | Storage | Private directory, server-generated filenames, no public URL, file removed when the resume or user is deleted |

@@ -15,7 +15,7 @@ const routes = { route: "/jobs/new", path: "/jobs/new", extraRoutes: [{ path: "/
 const LINK = "https://boards.greenhouse.io/acme/jobs/123";
 
 beforeEach(() => {
-  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", date_joined: "2026-01-01T00:00:00Z" });
+  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", college_name: "Example College", graduation_year: 2025, date_joined: "2026-01-01T00:00:00Z" });
   vi.mocked(createJob).mockResolvedValue({ id: 7 } as Awaited<ReturnType<typeof createJob>>);
 });
 

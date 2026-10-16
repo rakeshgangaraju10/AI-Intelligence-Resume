@@ -28,6 +28,17 @@ export function DashboardPage() {
 
   return (
     <div>
+      {user && (!user.college_name || !user.graduation_year) && (
+        <div className="mb-4">
+          <Alert tone="info" title="Complete your profile">
+            Add your college name and year of passing out in{" "}
+            <Link to="/settings" className="font-medium underline">
+              Settings
+            </Link>
+            .
+          </Alert>
+        </div>
+      )}
       <PageHeader
         title={`Welcome${user ? `, ${user.full_name.split(" ")[0]}` : ""}`}
         description="Upload a resume, add a job description and see how they match."

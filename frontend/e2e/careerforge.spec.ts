@@ -33,6 +33,8 @@ async function register(page: Page, name: string, email: string) {
   await page.getByLabel(/^email/i).fill(email);
   await page.getByLabel(/^password/i).fill(PASSWORD);
   await page.getByLabel(/^confirm password/i).fill(PASSWORD);
+  await page.getByLabel(/^college name/i).fill("Example Institute of Technology");
+  await page.getByLabel(/^year of passing out/i).selectOption("2025");
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL(/\/dashboard$/);
 }

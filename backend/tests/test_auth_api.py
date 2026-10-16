@@ -21,7 +21,8 @@ def field_codes(response, field: str) -> list[str]:
 
 
 class TestRegister:
-    payload = {"full_name": "Casey Example", "email": "Casey@Example.com", "password": TEST_PASSWORD}
+    payload = {"full_name": "Casey Example", "email": "Casey@Example.com", "password": TEST_PASSWORD,
+               "college_name": "  Example Institute   of Technology ", "graduation_year": 2025}
 
     def test_register_creates_user_with_hashed_password_and_logs_in(self, api_client):
         response = api_client.post(REGISTER, self.payload)
@@ -51,7 +52,7 @@ class TestRegister:
         response = api_client.post(REGISTER, {})
         assert response.status_code == 400
         fields = response.json()["error"]["fields"]
-        assert set(fields) == {"full_name", "email", "password"}
+        assert set(fields) == {"full_name", "email", "password", "college_name", "graduation_year"}
 
     def test_client_cannot_grant_itself_admin(self, api_client):
         response = api_client.post(
@@ -246,3 +247,41 @@ class TestEnsureAdmin:
         with pytest.raises(CommandError):
             self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="owner@example.com", DJANGO_SUPERUSER_PASSWORD="123")
         assert not User.objects.exists()
+
+
+
+@pytest.mark.django_db
+class TestCollegeDetails:
+    payload = TestRegister.payload
+
+    def test_saved_and_returned_on_register(self, api_client):
+        body = api_client.post(REGISTER, self.payload).json()
+        assert body["college_name"] == "Example Institute of Technology"
+        assert body["graduation_year"] == 2025
+        user = User.objects.get(email="casey@example.com")
+        assert (user.college_name, user.graduation_year) == ("Example Institute of Technology", 2025)
+        assert api_client.get(ME).json()["college_name"] == "Example Institute of Technology"
+
+    @pytest.mark.parametrize("college", ["", "   ", "x"])
+    def test_college_is_required(self, api_client, college):
+        response = api_client.post(REGISTER, {**self.payload, "college_name": college})
+        assert response.status_code == 400
+        assert "college_name" in response.json()["error"]["fields"]
+        assert not User.objects.exists()
+
+    @pytest.mark.parametrize("year", [1979, 2100, "abc", ""])
+    def test_year_must_be_sensible(self, api_client, year):
+        response = api_client.post(REGISTER, {**self.payload, "graduation_year": year})
+        assert response.status_code == 400
+        assert "graduation_year" in response.json()["error"]["fields"]
+
+    def test_profile_can_update_college_details(self, user):
+        client = APIClient()
+        client.force_login(user)
+        response = client.patch(ME, {"college_name": "New College", "graduation_year": 2026})
+        assert response.status_code == 200
+        assert response.json()["college_name"] == "New College" and response.json()["graduation_year"] == 2026
+        assert client.patch(ME, {"college_name": " "}).status_code == 400
+        assert client.patch(ME, {"graduation_year": None}, format="json").status_code == 400
+        # updating only the name still works for accounts created before these fields existed
+        assert client.patch(ME, {"full_name": "Alex E."}).status_code == 200

@@ -22,12 +22,12 @@ class UserAdmin(DjangoUserAdmin):
     form = UserAdminChangeForm
     add_form = UserAdminCreationForm
     ordering = ["email"]
-    list_display = ["email", "full_name", "is_staff", "is_active", "date_joined"]
-    list_filter = ["is_staff", "is_superuser", "is_active"]
-    search_fields = ["email", "full_name"]
+    list_display = ["email", "full_name", "college_name", "graduation_year", "is_staff", "is_active", "date_joined"]
+    list_filter = ["is_staff", "is_superuser", "is_active", "graduation_year"]
+    search_fields = ["email", "full_name", "college_name"]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Profile", {"fields": ("full_name",)}),
+        ("Profile", {"fields": ("full_name", "college_name", "graduation_year")}),
         (
             "Permissions",
             {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},

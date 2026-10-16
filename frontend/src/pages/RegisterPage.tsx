@@ -4,17 +4,22 @@ import { Link, useNavigate } from "react-router";
 
 import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Feedback";
-import { TextField } from "../components/ui/Field";
+import { SelectField, TextField } from "../components/ui/Field";
 import { useAuth } from "../features/auth/AuthContext";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { applyServerErrors } from "../lib/forms";
+import { graduationYearOptions } from "../lib/years";
 
 interface RegisterForm {
   full_name: string;
   email: string;
   password: string;
   confirm_password: string;
+  college_name: string;
+  graduation_year: string;
 }
+
+const YEAR_OPTIONS = [{ value: "", label: "Select year" }, ...graduationYearOptions()];
 
 export function RegisterPage() {
   useDocumentTitle("Create account");
@@ -32,10 +37,16 @@ export function RegisterPage() {
   async function onSubmit(values: RegisterForm) {
     setFormError(null);
     try {
-      await registerUser({ full_name: values.full_name.trim(), email: values.email.trim(), password: values.password });
+      await registerUser({
+        full_name: values.full_name.trim(),
+        email: values.email.trim(),
+        password: values.password,
+        college_name: values.college_name.trim(),
+        graduation_year: Number(values.graduation_year),
+      });
       navigate("/dashboard", { replace: true });
     } catch (err) {
-      setFormError(applyServerErrors(err, setError, ["full_name", "email", "password"]));
+      setFormError(applyServerErrors(err, setError, ["full_name", "email", "password", "college_name", "graduation_year"]));
     }
   }
 
@@ -70,6 +81,26 @@ export function RegisterPage() {
             required: "Enter your email address.",
             pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address." },
           })}
+        />
+        <TextField
+          label="College name"
+          autoComplete="organization"
+          required
+          placeholder="e.g. Example Institute of Technology"
+          error={errors.college_name?.message}
+          {...register("college_name", {
+            required: "Enter your college name.",
+            validate: (value) => value.trim().length >= 2 || "Enter your college name.",
+            maxLength: { value: 200, message: "Use 200 characters or fewer." },
+          })}
+        />
+        <SelectField
+          label="Year of passing out"
+          required
+          hint="Expected year if you're still studying."
+          options={YEAR_OPTIONS}
+          error={errors.graduation_year?.message}
+          {...register("graduation_year", { required: "Select your year of passing out." })}
         />
         <TextField
           label="Password"

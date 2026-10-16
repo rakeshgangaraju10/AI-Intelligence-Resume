@@ -109,7 +109,7 @@ export function AnalysesPage() {
                   <th scope="col" className="px-4 py-3 font-medium">Resume</th>
                   <th scope="col" className="px-4 py-3 font-medium">Score</th>
                   <th scope="col" className="px-4 py-3 font-medium">Required coverage</th>
-                  <th scope="col" className="px-4 py-3 font-medium">Matched / not matched</th>
+                  <th scope="col" className="px-4 py-3 font-medium">Job skills</th>
                   <th scope="col" className="px-4 py-3 font-medium">Date</th>
                   <th scope="col" className="px-4 py-3">
                     <span className="sr-only">Actions</span>
@@ -139,8 +139,10 @@ export function AnalysesPage() {
                       <ScoreBadge score={a.score} />
                     </td>
                     <td className="px-4 py-3 text-slate-700">{formatPercent(a.required_coverage)}</td>
-                    <td className="px-4 py-3 text-slate-700">
-                      {a.matched_count} / {a.missing_count}
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <span className="font-medium text-emerald-700">{a.matched_count} matched</span>
+                      <span className="text-slate-400"> · </span>
+                      <span className="font-medium text-red-700">{a.missing_count} missing</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500">{formatDateTime(a.created_at)}</td>
                     <td className="px-4 py-3 text-right">

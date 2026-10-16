@@ -236,3 +236,11 @@ configured; `apps.core.email_backends.BrevoAPIBackend` on Render).
 | Method | Path | Notes |
 |---|---|---|
 | POST | `/jobs/import-url/` | `{url}` → `{title, company, description, source_url, method, warnings}`. Nothing is saved; the frontend fills the Add-job form for review. `method` is `structured` (schema.org `JobPosting` JSON-LD) or `page_text` (visible text, with a warning). Errors on `url`: `invalid_url`, `unsupported_site` (LinkedIn, Indeed, Glassdoor), `blocked_address`, `fetch_failed`, `not_html`, `too_large`, `no_content`. Throttle scope `job_import` (`THROTTLE_JOB_IMPORT_RATE`, default 30/hour per user). |
+
+### Sign-up profile fields
+
+`POST /auth/register/` also requires `college_name` (2–200 characters, whitespace
+collapsed) and `graduation_year` (integer from 1980 to the current year + 6). Errors use
+codes `blank` and `invalid_year`. Both fields appear in the user object (`/auth/me/`)
+and can be changed with `PATCH /auth/me/`. They're blank/`null` for admin accounts and
+accounts created before the fields existed; the dashboard asks those users to add them.

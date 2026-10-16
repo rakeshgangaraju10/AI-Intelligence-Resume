@@ -16,7 +16,7 @@ vi.mock("../services/resumes", () => ({ uploadResume: vi.fn() }));
 vi.mock("../services/analyses", () => ({ getAnalysis: vi.fn(), deleteAnalysis: vi.fn() }));
 
 beforeEach(() => {
-  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", date_joined: "2026-01-01T00:00:00Z" });
+  vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", college_name: "Example College", graduation_year: 2025, date_joined: "2026-01-01T00:00:00Z" });
 });
 
 function pdf(name = "resume.pdf", size = 2048, type = "application/pdf") {

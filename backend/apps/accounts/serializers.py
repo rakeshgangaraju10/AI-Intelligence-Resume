@@ -4,11 +4,34 @@ from rest_framework import serializers
 
 from .models import User
 
+GRADUATION_YEAR_MIN = 1980
+GRADUATION_YEAR_AHEAD = 6  # current students up to ~6 years before passing out
+
+
+def graduation_year_range() -> tuple[int, int]:
+    from django.utils import timezone
+
+    return GRADUATION_YEAR_MIN, timezone.now().year + GRADUATION_YEAR_AHEAD
+
+
+def check_college_name(value: str) -> str:
+    value = " ".join(value.split())
+    if len(value) < 2:
+        raise serializers.ValidationError("Enter your college name.", code="blank")
+    return value
+
+
+def check_graduation_year(value: int) -> int:
+    low, high = graduation_year_range()
+    if not low <= value <= high:
+        raise serializers.ValidationError(f"Enter a year between {low} and {high}.", code="invalid_year")
+    return value
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "email", "full_name", "date_joined"]
+        fields = ["id", "email", "full_name", "college_name", "graduation_year", "date_joined"]
         read_only_fields = fields
 
 
@@ -16,6 +39,14 @@ class RegisterSerializer(serializers.Serializer):
     full_name = serializers.CharField(max_length=150, trim_whitespace=True)
     email = serializers.EmailField(max_length=254)
     password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
+    college_name = serializers.CharField(max_length=200)
+    graduation_year = serializers.IntegerField()
+
+    def validate_college_name(self, value: str) -> str:
+        return check_college_name(value)
+
+    def validate_graduation_year(self, value: int) -> int:
+        return check_graduation_year(value)
 
     def validate_full_name(self, value: str) -> str:
         if not value.strip():
@@ -45,6 +76,8 @@ class RegisterSerializer(serializers.Serializer):
             email=validated_data["email"],
             password=validated_data["password"],
             full_name=validated_data["full_name"],
+            college_name=validated_data["college_name"],
+            graduation_year=validated_data["graduation_year"],
         )
 
 
@@ -70,7 +103,16 @@ class LoginSerializer(serializers.Serializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["full_name"]
+        fields = ["full_name", "college_name", "graduation_year"]
+        extra_kwargs = {"college_name": {"required": False}, "graduation_year": {"required": False}}
+
+    def validate_college_name(self, value: str) -> str:
+        return check_college_name(value)
+
+    def validate_graduation_year(self, value):
+        if value is None:
+            raise serializers.ValidationError("Enter your year of passing out.", code="required")
+        return check_graduation_year(value)
 
     def validate_full_name(self, value: str) -> str:
         if not value.strip():

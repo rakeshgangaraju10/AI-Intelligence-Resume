@@ -17,7 +17,7 @@ vi.mock("../services/auth", () => ({
 }));
 
 const mocked = vi.mocked(authApi);
-const USER = { id: 1, email: "alex@example.com", full_name: "Alex Example", date_joined: "2026-01-01T00:00:00Z" };
+const USER = { id: 1, email: "alex@example.com", full_name: "Alex Example", college_name: "Example College", graduation_year: 2025, date_joined: "2026-01-01T00:00:00Z" };
 
 beforeEach(() => {
   mocked.fetchCurrentUser.mockResolvedValue(null);
@@ -83,10 +83,50 @@ describe("RegisterPage", () => {
     await userEvent.type(screen.getByLabelText(/^email/i), "casey@example.com");
     await userEvent.type(screen.getByLabelText(/^password/i), "Long-Enough-Pass-1");
     await userEvent.type(screen.getByLabelText(/confirm password/i), "Long-Enough-Pass-1");
+    await userEvent.type(screen.getByLabelText(/college name/i), "Example Institute of Technology");
+    await userEvent.selectOptions(screen.getByLabelText(/year of passing out/i), "2025");
     await userEvent.click(screen.getByRole("button", { name: "Create account" }));
     const emailInput = screen.getByLabelText(/^email/i);
     await waitFor(() => expect(emailInput).toHaveAttribute("aria-invalid", "true"));
     expect(screen.getByText("An account with this email already exists.")).toBeInTheDocument();
+  });
+});
+
+describe("RegisterPage college details", () => {
+  it("requires college name and year of passing out", async () => {
+    renderWithProviders(<RegisterPage />, { route: "/register", path: "/register" });
+    await userEvent.type(await screen.findByLabelText(/full name/i), "Casey Example");
+    await userEvent.type(screen.getByLabelText(/^email/i), "casey@example.com");
+    await userEvent.type(screen.getByLabelText(/^password/i), "Long-Enough-Pass-1");
+    await userEvent.type(screen.getByLabelText(/confirm password/i), "Long-Enough-Pass-1");
+    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByText("Enter your college name.")).toBeInTheDocument();
+    expect(screen.getByText("Select your year of passing out.")).toBeInTheDocument();
+    expect(mocked.register).not.toHaveBeenCalled();
+  });
+
+  it("sends them with the registration", async () => {
+    mocked.register.mockResolvedValue(USER);
+    renderWithProviders(<RegisterPage />, {
+      route: "/register",
+      path: "/register",
+      extraRoutes: [{ path: "/dashboard", element: <p>Dashboard page</p> }],
+    });
+    await userEvent.type(await screen.findByLabelText(/full name/i), "Casey Example");
+    await userEvent.type(screen.getByLabelText(/^email/i), "casey@example.com");
+    await userEvent.type(screen.getByLabelText(/^password/i), "Long-Enough-Pass-1");
+    await userEvent.type(screen.getByLabelText(/confirm password/i), "Long-Enough-Pass-1");
+    await userEvent.type(screen.getByLabelText(/college name/i), "  Example Institute of Technology ");
+    await userEvent.selectOptions(screen.getByLabelText(/year of passing out/i), "2025");
+    await userEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByText("Dashboard page")).toBeInTheDocument();
+    expect(mocked.register).toHaveBeenCalledWith({
+      full_name: "Casey Example",
+      email: "casey@example.com",
+      password: "Long-Enough-Pass-1",
+      college_name: "Example Institute of Technology",
+      graduation_year: 2025,
+    });
   });
 });
 

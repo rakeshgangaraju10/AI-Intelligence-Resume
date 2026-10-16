@@ -19,7 +19,7 @@ echo "== csrf";     curl -sf -c "$JAR" -b "$JAR" "$BASE/auth/csrf/" -o /dev/null
 
 echo "== register $EMAIL"
 curl -sf -c "$JAR" -b "$JAR" -H "X-CSRFToken: $(csrf)" -H "Content-Type: application/json" \
-  -d "{\"full_name\":\"Smoke Test\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" \
+  -d "{\"full_name\":\"Smoke Test\",\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"college_name\":\"Example Institute of Technology\",\"graduation_year\":2025}" \
   "$BASE/auth/register/" | pretty
 
 echo "== upload $PDF"
