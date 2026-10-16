@@ -52,3 +52,19 @@ export function deleteAccount(password: string): Promise<void> {
     resetCsrf();
   });
 }
+
+/** Ask for a reset link. The server answers the same way whether or not the email has an account. */
+export async function requestPasswordReset(email: string): Promise<string> {
+  await ensureCsrfCookie();
+  const data = await request(() => api.post<{ detail: string }>("/auth/password-reset/", { email }));
+  return data.detail;
+}
+
+/** Set a new password using the uid/token from the emailed link. */
+export async function confirmPasswordReset(uid: string, token: string, newPassword: string): Promise<string> {
+  await ensureCsrfCookie();
+  const data = await request(() =>
+    api.post<{ detail: string }>("/auth/password-reset/confirm/", { uid, token, new_password: newPassword }),
+  );
+  return data.detail;
+}

@@ -175,6 +175,7 @@ REST_FRAMEWORK = {
         "auth": env("THROTTLE_AUTH_RATE", default="10/minute"),
         "uploads": env("THROTTLE_UPLOAD_RATE", default="20/hour"),
         "analyses": env("THROTTLE_ANALYSIS_RATE", default="60/hour"),
+        "password_reset": env("THROTTLE_PASSWORD_RESET_RATE", default="5/hour"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -201,6 +202,18 @@ SPECTACULAR_SETTINGS = {
         "ExperienceLevelEnum": "apps.jobs.models.ExperienceLevel",
     },
 }
+
+# --- Email (password reset) -----------------------------------------------------
+# Development prints emails to the console. Production on Render uses Brevo's
+# HTTPS API (Render's free plan blocks SMTP ports): see docs/deploy-free-render-neon.md.
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="CareerForge <no-reply@localhost>")
+BREVO_API_KEY = env("BREVO_API_KEY", default="")
+EMAIL_TIMEOUT = 10
+# Reset links expire after 1 hour (Django's default is 3 days).
+PASSWORD_RESET_TIMEOUT = env.int("PASSWORD_RESET_TIMEOUT", default=60 * 60)
+# Optional: public site address for links (default: the address the request came in on).
+PASSWORD_RESET_BASE_URL = env("PASSWORD_RESET_BASE_URL", default="")
 
 # --- Logging -------------------------------------------------------------------
 # Never log request bodies, resume text, passwords or session ids.

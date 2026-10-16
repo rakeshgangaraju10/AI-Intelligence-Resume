@@ -31,3 +31,11 @@ services:
         sync: false            # optional: a strong admin password
       - key: DJANGO_SUPERUSER_FULL_NAME
         sync: false            # optional: your name
+      # Password-reset emails via Brevo's HTTPS API (free, no card; Render's free
+      # plan blocks SMTP). Set the two secret values in the Render dashboard.
+      - key: EMAIL_BACKEND
+        value: apps.core.email_backends.BrevoAPIBackend
+      - key: BREVO_API_KEY
+        sync: false            # Brevo -> SMTP & API -> API keys
+      - key: DEFAULT_FROM_EMAIL
+        sync: false            # e.g. CareerForge <your-verified-sender@gmail.com>

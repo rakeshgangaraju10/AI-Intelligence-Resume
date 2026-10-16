@@ -107,3 +107,29 @@ class DeleteAccountSerializer(serializers.Serializer):
         if not self.context["request"].user.check_password(value):
             raise serializers.ValidationError("Password is incorrect.", code="wrong_password")
         return value
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, trim_whitespace=False, max_length=128)
+
+    def validate(self, attrs: dict) -> dict:
+        from .password_reset import user_from_token
+
+        user = user_from_token(attrs["uid"], attrs["token"])
+        if user is None:
+            raise serializers.ValidationError(
+                {"token": [serializers.ErrorDetail(
+                    "This reset link is invalid or has expired. Request a new one.", code="invalid_token")]}
+            )
+        try:
+            password_validation.validate_password(attrs["new_password"], user=user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"new_password": list(exc.messages)}) from exc
+        attrs["user"] = user
+        return attrs

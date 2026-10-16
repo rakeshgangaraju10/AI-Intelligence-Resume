@@ -220,3 +220,13 @@ Comparison response:
 Rate limit: `POST /analyses/` uses the `analyses` scope
 (`THROTTLE_ANALYSIS_RATE`, default `60/hour` per user). Reading history, comparing
 and downloading reports are not throttled.
+
+### Password reset (forgot password)
+
+| Method | Path | Notes |
+|---|---|---|
+| POST | `/auth/password-reset/` | `{email}`. Always `200` with the same message, whether or not the account exists. Emails a link `/reset-password/<uid>/<token>` (expires after `PASSWORD_RESET_TIMEOUT`, default 1 hour). CSRF required; throttle scope `password_reset` (`THROTTLE_PASSWORD_RESET_RATE`, default 5/hour per IP). |
+| POST | `/auth/password-reset/confirm/` | `{uid, token, new_password}`. `invalid_token` for a wrong, used or expired link; password validators apply. A successful reset logs out existing sessions, and the link stops working. |
+
+Email delivery: `EMAIL_BACKEND` (console in development, dummy in production unless
+configured; `apps.core.email_backends.BrevoAPIBackend` on Render).

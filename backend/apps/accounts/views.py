@@ -22,6 +22,8 @@ from .serializers import (
     ChangePasswordSerializer,
     DeleteAccountSerializer,
     LoginSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
     ProfileUpdateSerializer,
     RegisterSerializer,
     UserSerializer,
@@ -132,3 +134,44 @@ class ChangePasswordView(APIView):
         # Keep this session valid; every other session for the user is invalidated.
         update_session_auth_hash(request, request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+RESET_REQUESTED_MESSAGE = (
+    "If an account exists for that email, we've sent a link to reset the password. "
+    "Check your inbox and spam folder."
+)
+
+
+class PasswordResetRequestView(EnforceCsrfMixin, APIView):
+    """POST {email}. Same response whether or not the account exists."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_reset"
+
+    @extend_schema(request=PasswordResetRequestSerializer, responses={200: None})
+    def post(self, request: Request) -> Response:
+        from .password_reset import send_reset_email
+
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        send_reset_email(request, serializer.validated_data["email"])
+        return Response({"detail": RESET_REQUESTED_MESSAGE})
+
+
+class PasswordResetConfirmView(EnforceCsrfMixin, APIView):
+    """POST {uid, token, new_password}. Sets the password; the link then stops working."""
+
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "auth"
+
+    @extend_schema(request=PasswordResetConfirmSerializer, responses={200: None})
+    def post(self, request: Request) -> Response:
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        user.set_password(serializer.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        # Changing the password invalidates every existing session for this user.
+        return Response({"detail": "Your password has been changed. You can now log in."})

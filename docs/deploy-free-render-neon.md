@@ -84,17 +84,39 @@ If Render asks for a card at any point, stop and tell me; there's another way to
   admin account already exists, and the password shouldn't sit in settings.
 - Send Claude your address, so the README and your resume bullets can link to the live site.
 
-## Forgot a password?
+## Turn on "Forgot password?" emails (Brevo, free, no card)
 
-The site has no "Forgot password" email yet, because sending email needs an email service.
+Render's free plan blocks normal email (SMTP), so CareerForge sends through
+Brevo's web API instead. The free plan allows 300 emails/day.
 
-- **Admin password:** Render → careerforge → **Environment** → set
-  `DJANGO_SUPERUSER_EMAIL` (your admin email) and `DJANGO_SUPERUSER_PASSWORD` (a
-  new password: at least 10 characters, not all numbers, not a common word) →
-  **Save, rebuild, and deploy**. The logs show `Admin account password updated.`
-  Log in at `/admin/`, then delete `DJANGO_SUPERUSER_PASSWORD` again.
-- **A normal user's password:** log in to `/admin/` → **Users** → open the user →
-  click **"this form"** under the password field → set a new one.
+1. Go to **brevo.com** → **Sign up free** and create an account. No card is needed.
+2. Verify a sender address: **Settings** (or your name, top right) →
+   **Senders, Domains & Dedicated IPs** → **Senders** → **Add a sender**.
+   Use your Gmail address, then enter the code Brevo emails you.
+   Brevo sends from Gmail addresses through its own compliant address; that's
+   normal, and the email still shows "CareerForge" as the sender name.
+3. Create an API key: **SMTP & API** → **API Keys** → **Generate a new API key**,
+   named `careerforge`. **Copy it straight into Render. Don't paste it anywhere else.**
+4. Render → careerforge → **Environment** (add the variables if they're missing):
+   - `BREVO_API_KEY` = the key
+   - `DEFAULT_FROM_EMAIL` = `CareerForge <your-verified-sender@gmail.com>`
+   - `EMAIL_BACKEND` = `apps.core.email_backends.BrevoAPIBackend` (already set by `render.yaml`)
+
+   Then **Save, rebuild, and deploy**.
+5. Test it: log out → **Log in** → **Forgot password?** → enter your email → open
+   the email (check spam) → set a new password.
+
+Reset links expire after 1 hour and work once. The page always says "If an
+account exists…", so nobody can use it to find out who has an account. It's
+limited to 5 requests per hour per visitor.
+
+## Forgot the admin password?
+
+- Use **Forgot password?** on the login page with the admin email (once Brevo is set up), or:
+- Render → careerforge → **Environment** → set `DJANGO_SUPERUSER_EMAIL` and a new
+  `DJANGO_SUPERUSER_PASSWORD` (10+ characters, not common, not only numbers) →
+  **Save, rebuild, and deploy** → logs show `Admin account password updated.` →
+  log in at `/admin/` → delete `DJANGO_SUPERUSER_PASSWORD` again.
 
 ## Updating the site
 

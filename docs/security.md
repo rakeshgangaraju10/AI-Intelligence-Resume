@@ -70,6 +70,16 @@ The SPA CSP doesn't cover `/admin/` or `/api/v1/docs/`: Django serves those
 pages and Swagger UI loads its assets from a CDN. Restrict admin/docs access by
 network in production if possible.
 
+## Password reset (forgot password)
+
+| Control | Where | Tested |
+|---|---|---|
+| Same response for known and unknown emails (no account enumeration); inactive users get nothing | `accounts/password_reset.py` | ✓ |
+| Django's signed, expiring tokens (1 hour); a link stops working once the password changes | `default_token_generator` | ✓ |
+| Password validators on the new password; other sessions logged out after reset | `PasswordResetConfirmSerializer` | ✓ |
+| CSRF required; 5 requests/hour per IP | views, `password_reset` throttle | ✓ |
+| Reset links never logged; production never prints emails (dummy backend unless a provider is set) | `settings/production.py` | ✓ |
+
 ## Single-service / free hosting
 
 `RESUME_STORE_FILES=False` (the default in `config/settings/single_service.py`)

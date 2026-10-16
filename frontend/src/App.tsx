@@ -7,6 +7,7 @@ import { AnalysesPage } from "./pages/AnalysesPage";
 import { AnalysisComparePage } from "./pages/AnalysisComparePage";
 import { AnalysisDetailPage } from "./pages/AnalysisDetailPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { JobDetailPage } from "./pages/JobDetailPage";
 import { JobNewPage } from "./pages/JobNewPage";
 import { JobsPage } from "./pages/JobsPage";
@@ -14,6 +15,7 @@ import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { ResumeReviewPage } from "./pages/ResumeReviewPage";
 import { ResumesPage } from "./pages/ResumesPage";
 import { ResumeUploadPage } from "./pages/ResumeUploadPage";
@@ -27,7 +29,10 @@ export function App() {
         <Route element={<PublicOnlyRoute />}>
           <Route path="login" element={<LoginPage />} />
           <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
         </Route>
+        {/* Reachable while logged in too: the emailed link must always work. */}
+        <Route path="reset-password/:uid/:token" element={<ResetPasswordPage />} />
       </Route>
 
       <Route element={<ProtectedRoute />}>

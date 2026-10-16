@@ -72,6 +72,11 @@ export function LoginPage() {
         <Button type="submit" className="w-full" loading={isSubmitting}>
           Log in
         </Button>
+        <p className="text-center text-sm">
+          <Link to="/forgot-password" className="font-medium text-indigo-700 underline">
+            Forgot password?
+          </Link>
+        </p>
       </form>
     </div>
   );

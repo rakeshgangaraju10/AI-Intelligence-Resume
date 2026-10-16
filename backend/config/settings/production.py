@@ -31,3 +31,7 @@ REST_FRAMEWORK = {
     **REST_FRAMEWORK,
     "NUM_PROXIES": env.int("DRF_NUM_PROXIES", default=1),
 }
+
+# Never print emails (they contain password-reset links) to production logs.
+# Without a configured provider, reset emails are dropped and a warning is logged.
+EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.dummy.EmailBackend")
