@@ -4,6 +4,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router";
 import { useAuth } from "../../features/auth/AuthContext";
 import { Button } from "../ui/Button";
 import { DemoBanner } from "./DemoBanner";
+import { ServerWakeBanner } from "./ServerWakeBanner";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard" },
@@ -41,6 +42,7 @@ export function AppLayout() {
         Skip to content
       </a>
       <DemoBanner />
+      <ServerWakeBanner />
       <header className="border-b border-slate-200 bg-white print:hidden">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
           <Link to="/dashboard" className="text-lg font-bold text-indigo-800">

@@ -3,12 +3,14 @@ import { Link, Outlet } from "react-router";
 import { useAuth } from "../../features/auth/AuthContext";
 import { LinkButton } from "../ui/Button";
 import { DemoBanner } from "./DemoBanner";
+import { ServerWakeBanner } from "./ServerWakeBanner";
 
 export function PublicLayout() {
   const { user } = useAuth();
   return (
     <div className="flex min-h-screen flex-col">
       <DemoBanner />
+      <ServerWakeBanner />
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="text-lg font-bold text-indigo-800">

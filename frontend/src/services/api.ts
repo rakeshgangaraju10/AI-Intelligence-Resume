@@ -58,7 +58,18 @@ export function toApiError(err: unknown): ApiError {
   if (err instanceof ApiError) return err;
   if (err instanceof AxiosError) {
     if (!err.response) {
-      return new ApiError(0, "network_error", "Can't reach the server. Check your connection and try again.");
+      if (err.code === "ECONNABORTED" || err.code === "ETIMEDOUT") {
+        return new ApiError(
+          0,
+          "timeout",
+          "The server took too long to answer. It may have been starting up; please try again.",
+        );
+      }
+      return new ApiError(
+        0,
+        "network_error",
+        "Can't reach the server right now. It may be starting up (up to a minute) or your connection dropped; please try again.",
+      );
     }
     const { status, data } = err.response;
     if (isApiErrorBody(data)) {

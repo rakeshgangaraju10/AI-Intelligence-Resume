@@ -11,7 +11,8 @@ import type {
   ResumeSection,
   ResumeSkill,
 } from "../types/api";
-import { api, ensureCsrfCookie, request } from "./api";
+import { api, ApiError, ensureCsrfCookie, request } from "./api";
+import { markServerMaybeAsleep, wakeServer } from "./wake";
 
 export function listResumes(page = 1, pageSize = 20): Promise<Paginated<ResumeListItem>> {
   return request(() => api.get<Paginated<ResumeListItem>>("/resumes/", { params: { page, page_size: pageSize } }));
@@ -26,18 +27,35 @@ export async function uploadResume(
   title: string | undefined,
   onProgress?: (percent: number) => void,
 ): Promise<ResumeDetail> {
+  // On free hosting the server may be asleep: wake it before sending the file.
+  await wakeServer();
   await ensureCsrfCookie();
-  const form = new FormData();
-  form.append("file", file);
-  if (title) form.append("title", title);
-  return request(() =>
-    api.post<ResumeDetail>("/resumes/", form, {
-      timeout: 120_000,
-      onUploadProgress: (event) => {
-        if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
-      },
-    }),
-  );
+  const send = () => {
+    const form = new FormData();
+    form.append("file", file);
+    if (title) form.append("title", title);
+    return request(() =>
+      api.post<ResumeDetail>("/resumes/", form, {
+        timeout: 120_000,
+        onUploadProgress: (event) => {
+          if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+        },
+      }),
+    );
+  };
+  try {
+    return await send();
+  } catch (err) {
+    // No response at all (asleep/restarting server, dropped connection): wake it and retry once.
+    if (err instanceof ApiError && err.status === 0) {
+      markServerMaybeAsleep();
+      if (await wakeServer({ force: true })) {
+        onProgress?.(0);
+        return send();
+      }
+    }
+    throw err;
+  }
 }
 
 export function renameResume(id: string, title: string): Promise<ResumeDetail> {

@@ -118,6 +118,20 @@ limited to 5 requests per hour per visitor.
   **Save, rebuild, and deploy** → logs show `Admin account password updated.` →
   log in at `/admin/` → delete `DJANGO_SUPERUSER_PASSWORD` again.
 
+## Sleeping and "Can't reach the server"
+
+The free server sleeps after about 15 minutes without visitors, and waking takes
+up to a minute. Three things soften this:
+
+- `.github/workflows/keep-awake.yml` pings `/api/v1/health/` every 10 minutes,
+  so the site is usually awake. GitHub may delay scheduled runs, and Render's
+  750 free hours/month cover one always-on service. Disable the workflow in
+  GitHub → Actions if you don't want it.
+- The app pings the server as soon as a page opens, and again when someone
+  returns to a tab after a while. If waking is slow, it shows "Starting the server…".
+- Resume uploads wait for the server to wake and retry once automatically if
+  the connection drops.
+
 ## Updating the site
 
 Every push to `main` on GitHub redeploys automatically (`autoDeploy: true`).

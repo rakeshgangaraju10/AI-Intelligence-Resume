@@ -60,3 +60,12 @@ describe("filenameFromDisposition", () => {
     expect(filenameFromDisposition("attachment", "fallback.md")).toBe("fallback.md");
   });
 });
+
+describe("timeouts", () => {
+  it("explains a timeout separately from a dropped connection", () => {
+    const err = toApiError(new AxiosError("timeout of 60000ms exceeded", "ECONNABORTED"));
+    expect(err.code).toBe("timeout");
+    expect(err.status).toBe(0);
+    expect(err.message).toMatch(/took too long/);
+  });
+});
