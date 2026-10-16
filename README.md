@@ -40,14 +40,14 @@ artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
 
 | Area | Implemented |
 |---|---|
-| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth; profile update, password change, account deletion |
+| Accounts | Custom email-based `User` model; register / login / logout / me with session cookies + CSRF; rate-limited auth; profile update, password change, account deletion; forgot-password emails (signed, expiring one-time links) |
 | Resume upload | `POST /api/v1/resumes/` (multipart) with extension, content-type, size and `%PDF-` signature checks |
 | Text extraction | PyMuPDF; rejects corrupt, password-protected, scanned (no text layer), too-many-pages and oversized-text PDFs with specific error codes |
 | Storage | Private directory, server-generated filenames, no public URL, file removed when the resume or user is deleted |
 | Resume API | List (paginated), retrieve, delete — scoped to the owner (other users get 404) |
 | Structured parsing (Stage 4) | Rule-based section, contact, skill, education, experience, project and certification extraction; 115-skill dictionary with aliases; evidence for every detected skill |
 | Review & editing (Stage 4) | Extraction endpoint, CRUD per section, profile editing, re-parse that preserves user edits, parser vs user provenance |
-| Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing |
+| Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing; six one-click example jobs (clearly marked as examples) for trying the app |
 | Matching (Stage 5) | Deterministic weighted score (0–100) with matched / missing / related skills, resume evidence, per-skill explanations, strengths, improvements and suggestions; results stored as history |
 | History & reports (Stage 7) | Compare any two analyses skill by skill (gained / lost / unchanged, score delta, like-for-like warning); Markdown report download; print-friendly results page |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |

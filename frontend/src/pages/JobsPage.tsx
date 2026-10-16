@@ -50,8 +50,18 @@ export function JobsPage() {
         query ? (
           <EmptyState title="No matching jobs">Try a different search term.</EmptyState>
         ) : (
-          <EmptyState title="No job descriptions yet" action={<LinkButton to={`/jobs/new${suffix}`}>Add your first job description</LinkButton>}>
-            Paste a job posting and CareerForge will suggest its required and preferred skills for you to review.
+          <EmptyState
+            title="No job descriptions yet"
+            action={
+              <div className="flex flex-wrap justify-center gap-2">
+                <LinkButton to={`/jobs/new${suffix}`}>Add your first job description</LinkButton>
+                <LinkButton to={`/jobs/new?sample=python-developer${suffix ? "&" + suffix.slice(1) : ""}`} variant="secondary">
+                  Try a sample job
+                </LinkButton>
+              </div>
+            }
+          >
+            Paste a job posting from any job site, or start with one of our example jobs.
           </EmptyState>
         )
       ) : (

@@ -8,6 +8,7 @@ import { SelectField, TextArea, TextField } from "../components/ui/Field";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { EXPERIENCE_LEVEL_LABELS } from "../lib/format";
 import { applyServerErrors } from "../lib/forms";
+import { findSampleJob, SAMPLE_JOBS, type SampleJob } from "../lib/sampleJobs";
 import { splitSkillList } from "../lib/skills";
 import { createJob } from "../services/jobs";
 import type { ExperienceLevel } from "../types/api";
@@ -30,14 +31,25 @@ export function JobNewPage() {
   const [params] = useSearchParams();
   const resumeParam = params.get("resume");
   const [formError, setFormError] = useState<string | null>(null);
+  const initialSample = findSampleJob(params.get("sample"));
+  const [sampleTitle, setSampleTitle] = useState<string | null>(initialSample?.title ?? null);
   const {
     register,
     handleSubmit,
     setError,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<JobForm>({
-    defaultValues: { title: "", company: "", experience_level: "unspecified", description: "", required_skills: "", preferred_skills: "", auto_extract: true },
+    defaultValues: initialSample
+      ? sampleValues(initialSample)
+      : { title: "", company: "", experience_level: "unspecified", description: "", required_skills: "", preferred_skills: "", auto_extract: true },
   });
+
+  function applySample(sample: SampleJob) {
+    setFormError(null);
+    reset(sampleValues(sample));
+    setSampleTitle(sample.title);
+  }
 
   async function onSubmit(values: JobForm) {
     setFormError(null);
@@ -68,6 +80,23 @@ export function JobNewPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Add a job description" description="You can review and edit every skill after saving." />
+      <Card className="mb-4" title="No job description handy? Try a sample">
+        <p className="mb-3 text-sm text-slate-600">
+          These are example postings written for CareerForge, not real jobs. Pick one, then click <strong>Save job</strong>.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {SAMPLE_JOBS.map((sample) => (
+            <Button key={sample.id} size="sm" variant="secondary" onClick={() => applySample(sample)}>
+              {sample.title}
+            </Button>
+          ))}
+        </div>
+        {sampleTitle && (
+          <p className="mt-3 text-sm text-emerald-800" role="status">
+            Filled in “{sampleTitle}”. Review it below and click Save job.
+          </p>
+        )}
+      </Card>
       <Card>
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
           {formError && <Alert tone="error">{formError}</Alert>}
@@ -120,4 +149,17 @@ export function JobNewPage() {
       </Card>
     </div>
   );
+}
+
+function sampleValues(sample: SampleJob): JobForm {
+  return {
+    title: sample.title,
+    company: sample.company,
+    experience_level: sample.experience_level,
+    description: sample.description,
+    required_skills: sample.required_skills.join(", "),
+    preferred_skills: sample.preferred_skills.join(", "),
+    // The skill lists are already exact; don't add extra suggestions from the text.
+    auto_extract: false,
+  };
 }
