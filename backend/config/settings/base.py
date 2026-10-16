@@ -176,6 +176,7 @@ REST_FRAMEWORK = {
         "uploads": env("THROTTLE_UPLOAD_RATE", default="20/hour"),
         "analyses": env("THROTTLE_ANALYSIS_RATE", default="60/hour"),
         "password_reset": env("THROTTLE_PASSWORD_RESET_RATE", default="5/hour"),
+        "job_import": env("THROTTLE_JOB_IMPORT_RATE", default="30/hour"),
     },
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

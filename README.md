@@ -47,7 +47,7 @@ artifact. They will be added to `docs/screenshots/` after the first Stage 8 run.
 | Resume API | List (paginated), retrieve, delete — scoped to the owner (other users get 404) |
 | Structured parsing (Stage 4) | Rule-based section, contact, skill, education, experience, project and certification extraction; 115-skill dictionary with aliases; evidence for every detected skill |
 | Review & editing (Stage 4) | Extraction endpoint, CRUD per section, profile editing, re-parse that preserves user edits, parser vs user provenance |
-| Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing; six one-click example jobs (clearly marked as examples) for trying the app |
+| Job descriptions (Stage 5) | Save jobs with required/preferred skills and weights; skills suggested from pasted descriptions; full editing; six one-click example jobs (clearly marked as examples); **import from a job link** (reads schema.org `JobPosting` data from career sites, with SSRF protections) |
 | Matching (Stage 5) | Deterministic weighted score (0–100) with matched / missing / related skills, resume evidence, per-skill explanations, strengths, improvements and suggestions; results stored as history |
 | History & reports (Stage 7) | Compare any two analyses skill by skill (gained / lost / unchanged, score delta, like-for-like warning); Markdown report download; print-friendly results page |
 | Platform | Health check, consistent JSON error envelope, OpenAPI schema + Swagger UI, Django Admin |

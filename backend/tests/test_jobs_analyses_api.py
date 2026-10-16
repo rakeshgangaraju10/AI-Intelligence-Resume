@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from django.urls import reverse
 from rest_framework.throttling import ScopedRateThrottle
@@ -377,3 +379,55 @@ class TestCompareAndReport:
         assert response.json()["error"]["code"] == "throttled"
         # reading history is not throttled
         assert auth_client.get(ANALYSES).status_code == 200
+
+
+# --- Import a job from a link --------------------------------------------------------------
+
+IMPORT_URL = reverse("job-import-url")
+
+
+class TestJobImport:
+    def test_returns_fields_for_the_form_without_saving(self, auth_client):
+        from apps.jobs.services.job_import import ImportedJob
+
+        imported = ImportedJob(title="Junior Backend Developer", company="Acme Example",
+                               description="Source: https://jobs.example.com/1\n\nRequirements\n- Python",
+                               source_url="https://jobs.example.com/1", method="structured")
+        with mock.patch("apps.jobs.views.import_job_from_url", return_value=imported) as importer:
+            response = auth_client.post(IMPORT_URL, {"url": "https://jobs.example.com/1"})
+        assert response.status_code == 200, response.content
+        body = response.json()
+        assert body["title"] == "Junior Backend Developer" and body["company"] == "Acme Example"
+        assert body["method"] == "structured" and body["warnings"] == []
+        importer.assert_called_once_with("https://jobs.example.com/1")
+        assert JobDescription.objects.count() == 0
+
+    def test_import_errors_are_field_errors(self, auth_client):
+        from apps.jobs.services.job_import import JobImportError
+
+        error = JobImportError("unsupported_site", "LinkedIn doesn't allow job pages to be read automatically.")
+        with mock.patch("apps.jobs.views.import_job_from_url", side_effect=error):
+            response = auth_client.post(IMPORT_URL, {"url": "https://www.linkedin.com/jobs/view/1"})
+        assert response.status_code == 400
+        assert field_code(response, "url") == "unsupported_site"
+        assert "LinkedIn" in response.json()["error"]["fields"]["url"][0]["message"]
+
+    def test_private_addresses_are_refused_end_to_end(self, auth_client):
+        response = auth_client.post(IMPORT_URL, {"url": "http://127.0.0.1/admin/"})
+        assert response.status_code == 400
+        assert field_code(response, "url") == "blocked_address"
+
+    def test_requires_login_and_url(self, api_client, auth_client):
+        assert api_client.post(IMPORT_URL, {"url": "https://example.com"}).status_code == 403
+        assert auth_client.post(IMPORT_URL, {}).status_code == 400
+
+    def test_rate_limited(self, auth_client, monkeypatch):
+        from apps.jobs.services.job_import import ImportedJob
+
+        monkeypatch.setattr(ScopedRateThrottle, "THROTTLE_RATES", {"job_import": "1/hour", "uploads": "1000/minute"})
+        ok = ImportedJob(title="T", company="", description="d", source_url="u", method="page_text")
+        with mock.patch("apps.jobs.views.import_job_from_url", return_value=ok):
+            assert auth_client.post(IMPORT_URL, {"url": "https://a.example"}).status_code == 200
+            assert auth_client.post(IMPORT_URL, {"url": "https://a.example"}).status_code == 429
+        # other job endpoints are not throttled by this scope
+        assert auth_client.get(JOBS).status_code == 200

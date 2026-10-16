@@ -258,6 +258,15 @@ export interface AnalysisComparison {
   skills: SkillComparison[];
 }
 
+export interface ImportedJob {
+  title: string;
+  company: string;
+  description: string;
+  source_url: string;
+  method: "structured" | "page_text";
+  warnings: string[];
+}
+
 // --- Errors ------------------------------------------------------------------------------
 
 export interface FieldError {

@@ -24,7 +24,7 @@ RESUME_MAX_PAGES = 5
 # High limits so ordinary tests are never throttled; throttle tests override these.
 REST_FRAMEWORK = {
     **REST_FRAMEWORK,
-    "DEFAULT_THROTTLE_RATES": {"auth": "1000/minute", "uploads": "1000/minute", "analyses": "1000/minute", "password_reset": "1000/minute"},
+    "DEFAULT_THROTTLE_RATES": {"auth": "1000/minute", "uploads": "1000/minute", "analyses": "1000/minute", "password_reset": "1000/minute", "job_import": "1000/minute"},
 }
 
 CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}

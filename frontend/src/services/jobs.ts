@@ -1,4 +1,4 @@
-import type { JobCreatePayload, JobDetail, JobListItem, JobRequirement, Paginated, RequirementKind } from "../types/api";
+import type { ImportedJob, JobCreatePayload, JobDetail, JobListItem, JobRequirement, Paginated, RequirementKind } from "../types/api";
 import { api, request } from "./api";
 
 export function listJobs(search = "", page = 1): Promise<Paginated<JobListItem>> {
@@ -47,4 +47,9 @@ export function updateRequirement(
 
 export function deleteRequirement(jobId: number, reqId: number): Promise<void> {
   return request(() => api.delete(`/jobs/${jobId}/requirements/${reqId}/`)).then(() => undefined);
+}
+
+/** Read a public job page (company careers site, Greenhouse, Lever…) for the Add-job form. Saves nothing. */
+export function importJobFromUrl(url: string): Promise<ImportedJob> {
+  return request(() => api.post<ImportedJob>("/jobs/import-url/", { url }));
 }

@@ -80,6 +80,18 @@ network in production if possible.
 | CSRF required; 5 requests/hour per IP | views, `password_reset` throttle | ✓ |
 | Reset links never logged; production never prints emails (dummy backend unless a provider is set) | `settings/production.py` | ✓ |
 
+## Job import from a link (server-side fetch: SSRF controls)
+
+| Control | Where | Tested |
+|---|---|---|
+| Only `http`/`https`, default ports, no credentials in the URL | `jobs/services/job_import.py` `validate_url` | ✓ |
+| Hostname resolved; **every** address must be public (no loopback, private, link-local/cloud metadata, CGNAT, multicast, IPv4-mapped tricks) | `resolve_public_ip`, `is_public_ip` | ✓ |
+| Connection made to the already-checked IP (TLS still verifies the real hostname), so DNS rebinding has no window | `_PinnedHTTPSConnection` | review |
+| Redirects followed manually (max 3), each hop re-validated | `fetch_html` | ✓ |
+| 8 s timeout, 2 MB limit, HTML only, nothing executed; JSON-LD parsed as data | same | ✓ |
+| Login-walled / no-automation sites refused with a "paste instead" message | `BLOCKED_SITES` | ✓ |
+| Logged-in users only, 30 imports/hour per user; nothing saved without review | `JobViewSet.import_url` | ✓ |
+
 ## Single-service / free hosting
 
 `RESUME_STORE_FILES=False` (the default in `config/settings/single_service.py`)

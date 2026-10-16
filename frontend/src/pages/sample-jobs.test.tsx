@@ -9,7 +9,7 @@ import { renderWithProviders } from "../test/utils";
 import { JobNewPage } from "./JobNewPage";
 
 vi.mock("../services/auth", () => ({ fetchCurrentUser: vi.fn(), login: vi.fn(), register: vi.fn(), logout: vi.fn() }));
-vi.mock("../services/jobs", () => ({ createJob: vi.fn() }));
+vi.mock("../services/jobs", () => ({ createJob: vi.fn(), importJobFromUrl: vi.fn() }));
 
 beforeEach(() => {
   vi.mocked(fetchCurrentUser).mockResolvedValue({ id: 1, email: "a@example.com", full_name: "A", date_joined: "2026-01-01T00:00:00Z" });

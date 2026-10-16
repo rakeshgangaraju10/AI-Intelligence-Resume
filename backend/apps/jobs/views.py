@@ -3,9 +3,11 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ErrorDetail, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from .models import JobDescription, JobRequirement
 from .serializers import (
@@ -14,7 +16,21 @@ from .serializers import (
     JobListSerializer,
     JobRequirementSerializer,
 )
+from .services.job_import import JobImportError, import_job_from_url
 from .services.job_service import add_suggested_requirements
+
+
+class JobImportRequestSerializer(serializers.Serializer):
+    url = serializers.CharField(max_length=2000)
+
+
+class JobImportResponseSerializer(serializers.Serializer):
+    title = serializers.CharField()
+    company = serializers.CharField(allow_blank=True)
+    description = serializers.CharField()
+    source_url = serializers.CharField()
+    method = serializers.ChoiceField(choices=["structured", "page_text"])
+    warnings = serializers.ListField(child=serializers.CharField())
 
 
 class JobViewSet(viewsets.ModelViewSet):
@@ -25,6 +41,7 @@ class JobViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+    throttle_scope = "job_import"  # only the import-url action uses ScopedRateThrottle
 
     def get_queryset(self) -> QuerySet[JobDescription]:
         if getattr(self, "swagger_fake_view", False):
@@ -71,6 +88,22 @@ class JobViewSet(viewsets.ModelViewSet):
         job = JobDescription.objects.prefetch_related("requirements").get(pk=job.pk)
         return Response({"added": added, "job": JobDetailSerializer(job, context=self.get_serializer_context()).data})
 
+
+
+    @extend_schema(request=JobImportRequestSerializer, responses={200: JobImportResponseSerializer})
+    @action(detail=False, methods=["post"], url_path="import-url", throttle_classes=[ScopedRateThrottle])
+    def import_url(self, request: Request) -> Response:
+        """
+        Read a public job page and return its title, company and description for the
+        Add-job form. Nothing is saved; the user reviews it and saves the job.
+        """
+        payload = JobImportRequestSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            job = import_job_from_url(payload.validated_data["url"])
+        except JobImportError as exc:
+            raise ValidationError({"url": [ErrorDetail(exc.message, code=exc.code)]}) from exc
+        return Response(JobImportResponseSerializer(job).data)
 
 class JobRequirementViewSet(viewsets.ModelViewSet):
     """CRUD for a job's skills, nested under /jobs/{job_pk}/requirements/."""

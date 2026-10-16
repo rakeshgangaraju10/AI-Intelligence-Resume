@@ -5,13 +5,14 @@ import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "../components/ui/Button";
 import { Alert, Card, PageHeader } from "../components/ui/Feedback";
 import { SelectField, TextArea, TextField } from "../components/ui/Field";
+import { JobLinkImport } from "../features/jobs/JobLinkImport";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { EXPERIENCE_LEVEL_LABELS } from "../lib/format";
 import { applyServerErrors } from "../lib/forms";
 import { findSampleJob, SAMPLE_JOBS, type SampleJob } from "../lib/sampleJobs";
 import { splitSkillList } from "../lib/skills";
 import { createJob } from "../services/jobs";
-import type { ExperienceLevel } from "../types/api";
+import type { ExperienceLevel, ImportedJob } from "../types/api";
 
 interface JobForm {
   title: string;
@@ -44,6 +45,21 @@ export function JobNewPage() {
       ? sampleValues(initialSample)
       : { title: "", company: "", experience_level: "unspecified", description: "", required_skills: "", preferred_skills: "", auto_extract: true },
   });
+
+  function applyImported(job: ImportedJob) {
+    setFormError(null);
+    setSampleTitle(null);
+    reset({
+      title: job.title,
+      company: job.company,
+      experience_level: "unspecified",
+      description: job.description,
+      required_skills: "",
+      preferred_skills: "",
+      // Let CareerForge find the required/preferred skills in the imported text.
+      auto_extract: true,
+    });
+  }
 
   function applySample(sample: SampleJob) {
     setFormError(null);
@@ -80,6 +96,7 @@ export function JobNewPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader title="Add a job description" description="You can review and edit every skill after saving." />
+      <JobLinkImport onImported={applyImported} />
       <Card className="mb-4" title="No job description handy? Try a sample">
         <p className="mb-3 text-sm text-slate-600">
           These are example postings written for CareerForge, not real jobs. Pick one, then click <strong>Save job</strong>.
