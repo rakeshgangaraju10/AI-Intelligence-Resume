@@ -20,6 +20,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [formError, setFormError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -53,22 +54,37 @@ export function LoginPage() {
         <TextField
           label="Email"
           type="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           autoComplete="email"
           required
           error={errors.email?.message}
           {...register("email", {
             required: "Enter your email address.",
-            pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address." },
+            pattern: { value: /^\s*\S+@\S+\.\S+\s*$/, message: "Enter a valid email address." },
           })}
         />
         <TextField
           label="Password"
-          type="password"
+          type={showPassword ? "text" : "password"}
           autoComplete="current-password"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           required
           error={errors.password?.message}
           {...register("password", { required: "Enter your password." })}
         />
+        <label className="flex items-center gap-2 text-sm text-slate-700">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-slate-300"
+            checked={showPassword}
+            onChange={(e) => setShowPassword(e.target.checked)}
+          />
+          Show password
+        </label>
         <Button type="submit" className="w-full" loading={isSubmitting}>
           Log in
         </Button>

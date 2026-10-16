@@ -113,10 +113,14 @@ limited to 5 requests per hour per visitor.
 ## Forgot the admin password?
 
 - Use **Forgot password?** on the login page with the admin email (once Brevo is set up), or:
-- Render → careerforge → **Environment** → set `DJANGO_SUPERUSER_EMAIL` and a new
-  `DJANGO_SUPERUSER_PASSWORD` (10+ characters, not common, not only numbers) →
-  **Save, rebuild, and deploy** → logs show `Admin account password updated.` →
-  log in at `/admin/` → delete `DJANGO_SUPERUSER_PASSWORD` again.
+- Render → careerforge → **Environment** → set `DJANGO_SUPERUSER_EMAIL`, a new
+  `DJANGO_SUPERUSER_PASSWORD` (10+ characters, not common, not only numbers) and
+  `DJANGO_SUPERUSER_RESET_PASSWORD` = `true` → **Save, rebuild, and deploy** → logs
+  show `Admin account password updated.` → log in at `/admin/` → delete
+  `DJANGO_SUPERUSER_PASSWORD` and `DJANGO_SUPERUSER_RESET_PASSWORD` again.
+- Without `DJANGO_SUPERUSER_RESET_PASSWORD`, an existing admin's password is never
+  changed on start-up, so a password you set later (e.g. via Forgot password)
+  survives the free server sleeping and waking.
 
 ## Sleeping and "Can't reach the server"
 

@@ -74,12 +74,15 @@ export function RegisterPage() {
         <TextField
           label="Email"
           type="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           autoComplete="email"
           required
           error={errors.email?.message}
           {...register("email", {
             required: "Enter your email address.",
-            pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address." },
+            pattern: { value: /^\s*\S+@\S+\.\S+\s*$/, message: "Enter a valid email address." },
           })}
         />
         <TextField

@@ -1,10 +1,15 @@
 """
-Create the admin account from environment variables, or reset its password.
+Create the admin account from environment variables (runs on every start).
 
 Used on hosts without a shell (e.g. Render's free plan): set
 DJANGO_SUPERUSER_EMAIL and DJANGO_SUPERUSER_PASSWORD (optionally
 DJANGO_SUPERUSER_FULL_NAME), deploy, log in, then remove the password variable.
-Does nothing when either variable is missing. Never prints the password.
+
+An existing account's password is only changed when
+DJANGO_SUPERUSER_RESET_PASSWORD=true. Otherwise a password left in the
+environment would undo every later password change each time the free server
+wakes up or restarts. Does nothing when either variable is missing. Never
+prints the password.
 """
 import os
 
@@ -35,6 +40,13 @@ class Command(BaseCommand):
         if user is None:
             User.objects.create_superuser(email=email, password=password, full_name=full_name)
             self.stdout.write("Admin account created.")
+            return
+        reset = os.environ.get("DJANGO_SUPERUSER_RESET_PASSWORD", "").strip().lower() in {"1", "true", "yes"}
+        if not reset:
+            self.stdout.write(
+                "Admin account exists; password left unchanged "
+                "(set DJANGO_SUPERUSER_RESET_PASSWORD=true to reset it)."
+            )
             return
         user.set_password(password)
         user.is_staff = True

@@ -214,7 +214,8 @@ class TestEnsureAdmin:
 
         from django.core.management import call_command
 
-        for key in ("DJANGO_SUPERUSER_EMAIL", "DJANGO_SUPERUSER_PASSWORD", "DJANGO_SUPERUSER_FULL_NAME"):
+        for key in ("DJANGO_SUPERUSER_EMAIL", "DJANGO_SUPERUSER_PASSWORD", "DJANGO_SUPERUSER_FULL_NAME",
+                    "DJANGO_SUPERUSER_RESET_PASSWORD"):
             monkeypatch.delenv(key, raising=False)
         for key, value in env.items():
             monkeypatch.setenv(key, value)
@@ -233,8 +234,17 @@ class TestEnsureAdmin:
         admin = User.objects.get(email="owner@example.com")
         assert admin.is_superuser and admin.is_staff and admin.check_password("First-Strong-Pass-91")
 
+        # A restart with the variables still set must not undo a later password change.
+        admin.set_password("Changed-By-Owner-77")
+        admin.save()
+        out = self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="owner@example.com",
+                        DJANGO_SUPERUSER_PASSWORD="First-Strong-Pass-91")
+        assert "left unchanged" in out
+        admin.refresh_from_db()
+        assert admin.check_password("Changed-By-Owner-77")
+
         out = self._run(monkeypatch, DJANGO_SUPERUSER_EMAIL="OWNER@example.com",
-                        DJANGO_SUPERUSER_PASSWORD="Second-Strong-Pass-92")
+                        DJANGO_SUPERUSER_PASSWORD="Second-Strong-Pass-92", DJANGO_SUPERUSER_RESET_PASSWORD="true")
         assert "password updated" in out
         admin.refresh_from_db()
         assert admin.check_password("Second-Strong-Pass-92")

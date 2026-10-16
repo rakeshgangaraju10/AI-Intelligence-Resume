@@ -40,7 +40,7 @@ describe("LoginPage", () => {
     );
     renderWithProviders(<LoginPage />, { route: "/login", path: "/login" });
     await userEvent.type(await screen.findByLabelText(/email/i), "alex@example.com");
-    await userEvent.type(screen.getByLabelText(/password/i), "wrong-password");
+    await userEvent.type(screen.getByLabelText(/^password/i), "wrong-password");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Invalid email or password.");
   });
@@ -53,7 +53,7 @@ describe("LoginPage", () => {
       extraRoutes: [{ path: "/dashboard", element: <p>Dashboard page</p> }],
     });
     await userEvent.type(await screen.findByLabelText(/email/i), "alex@example.com");
-    await userEvent.type(screen.getByLabelText(/password/i), "Correct-Horse-Battery-42");
+    await userEvent.type(screen.getByLabelText(/^password/i), "Correct-Horse-Battery-42");
     await userEvent.click(screen.getByRole("button", { name: "Log in" }));
     expect(await screen.findByText("Dashboard page")).toBeInTheDocument();
     expect(mocked.login).toHaveBeenCalledWith("alex@example.com", "Correct-Horse-Battery-42");
