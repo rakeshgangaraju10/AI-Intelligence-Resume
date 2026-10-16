@@ -40,7 +40,7 @@ async function expectFitsScreen(page: Page, name: string) {
     }
     return { width, scrollWidth, offenders };
   });
-  expect(
+  expect.soft(
     overflow.scrollWidth,
     `${name}: page is ${overflow.scrollWidth}px wide on a ${overflow.width}px screen. Sticking out: ${overflow.offenders.join(", ")}`,
   ).toBeLessThanOrEqual(overflow.width + 1);

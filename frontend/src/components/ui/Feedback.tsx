@@ -31,7 +31,7 @@ export function EmptyState({ title, children, action }: { title: string; childre
 
 export function Card({ title, actions, children, className = "" }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6 ${className}`}>
+    <section className={`min-w-0 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-6 ${className}`}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           {title && <h2 className="text-lg font-semibold text-slate-900">{title}</h2>}

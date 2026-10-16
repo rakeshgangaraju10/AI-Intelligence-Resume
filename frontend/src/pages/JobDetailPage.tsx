@@ -50,7 +50,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
   }
 
   return (
-    <tr className="grid grid-cols-2 gap-x-3 gap-y-2 py-3 align-top md:table-row md:py-0">
+    <tr className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-x-3 gap-y-2 py-3 align-top md:table-row md:py-0">
       <td className="col-span-2 block md:table-cell md:py-3 md:pr-3">
         <div className="font-medium text-slate-900">{req.name}</div>
         <div className="mt-1 flex flex-wrap gap-1">
@@ -172,7 +172,7 @@ function RunAnalysisPanel({ job, initialResumeId }: { job: JobDetail; initialRes
             {history.data.results.map((a) => (
               <li key={a.id}>
                 <Link to={`/analyses/${a.id}`} className="flex items-center justify-between gap-3 py-2 text-sm hover:bg-slate-50">
-                  <span className="truncate">
+                  <span className="min-w-0 truncate">
                     {a.resume_title} · {formatDate(a.created_at)}
                   </span>
                   <ScoreBadge score={a.score} />

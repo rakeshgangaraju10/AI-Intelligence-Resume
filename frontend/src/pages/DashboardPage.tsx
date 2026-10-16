@@ -88,7 +88,7 @@ export function DashboardPage() {
                   {analyses.results.map((a) => (
                     <li key={a.id}>
                       <Link to={`/analyses/${a.id}`} className="flex items-center justify-between gap-3 py-3 hover:bg-slate-50">
-                        <span className="min-w-0">
+                        <span className="min-w-0 flex-1">
                           <span className="block truncate font-medium text-slate-900">{a.job_title}</span>
                           <span className="block truncate text-xs text-slate-500">
                             {a.resume_title} · {formatDate(a.created_at)}
@@ -107,13 +107,13 @@ export function DashboardPage() {
                 {resumes.results.map((r) => (
                   <li key={r.id}>
                     <Link to={`/resumes/${r.id}`} className="flex items-center justify-between gap-3 py-3 hover:bg-slate-50">
-                      <span className="min-w-0">
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium text-slate-900">{r.title}</span>
                         <span className="block truncate text-xs text-slate-500">
                           {r.original_filename} · {formatDate(r.created_at)}
                         </span>
                       </span>
-                      <span className="text-xs text-slate-500">{r.page_count} page{r.page_count === 1 ? "" : "s"}</span>
+                      <span className="shrink-0 text-xs text-slate-500">{r.page_count} page{r.page_count === 1 ? "" : "s"}</span>
                     </Link>
                   </li>
                 ))}
