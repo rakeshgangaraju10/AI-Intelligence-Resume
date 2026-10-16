@@ -1,11 +1,10 @@
 # Deployment guide
 
-> **Status:** CareerForge has **not** been deployed anywhere yet. This guide
-> describes the production setup in this repository. The containers are
-> built, started and smoke-tested together in CI
-> (`.github/workflows/production-stack.yml`): HTTP checks through nginx,
-> `check --deploy`, and a Chromium page load under the production CSP. That run is
-> plain HTTP on a CI runner, not a public deployment.
+> **Status:** The live site (https://careerforge-h362.onrender.com) runs the
+> single-container setup on Render + Neon ([guide](deploy-free-render-neon.md)).
+> The Docker Compose stack described below is for running on your own server.
+> CI builds, starts and smoke-tests it (`.github/workflows/production-stack.yml`),
+> but it is not what the live site uses.
 
 **Free, no card:** [deploy-free-render-neon.md](deploy-free-render-neon.md): Render's free web service plus Neon's free Postgres, as one container.
 

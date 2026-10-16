@@ -1,5 +1,7 @@
 # Free public website: Render + Neon (no credit card)
 
+> CareerForge is deployed this way at https://careerforge-h362.onrender.com.
+
 At the end, CareerForge runs at a public address like **https://careerforge.onrender.com**.
 Anyone can register, upload a resume and get their analysis.
 

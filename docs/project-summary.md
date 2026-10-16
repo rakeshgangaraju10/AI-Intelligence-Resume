@@ -1,8 +1,7 @@
 # CareerForge: project summary, resume bullets and interview notes
 
 All figures below come from CI runs on GitHub Actions; see the README status
-line for the commit. Update them if later runs change. Don't call the project
-deployed until it actually has a public URL.
+line for the commit. Update them if later runs change. Live site: https://careerforge-h362.onrender.com (free hosting; may take ~1 minute to wake).
 
 ## One-line description
 
@@ -27,15 +26,15 @@ algorithm.
   for other users' data), scoped rate limiting, layered PDF upload validation
   and private file storage**. Added CSP and other security headers at the API
   and nginx layers.
-- Wrote **201 backend tests (pytest, 97% coverage), 32 frontend tests (Vitest +
+- Wrote **206 backend tests (pytest, 96% coverage), 34 frontend tests (Vitest +
   Testing Library) and a Playwright end-to-end journey**. All run in **GitHub
   Actions**, along with OpenAPI schema validation and a smoke test of the
   production **Docker Compose (nginx + gunicorn + PostgreSQL)** stack.
 
 Shorter version for a one-line project entry:
 
-> CareerForge — Django REST Framework, React/TypeScript, PostgreSQL, Docker. PDF
-> resume parsing, explainable job-matching score, 230+ automated tests (97%
+> CareerForge (https://careerforge-h362.onrender.com) — Django REST Framework, React/TypeScript, PostgreSQL, Docker. PDF
+> resume parsing, explainable job-matching score, 230+ automated tests (96%
 > backend coverage), Playwright E2E, CI on GitHub Actions.
 
 ## Interview talking points
@@ -99,7 +98,7 @@ change?"
 
 ## Honest limitations to mention if asked
 
-- Not deployed publicly yet.
+- Hosted on free plans: the site sleeps when idle, and the first request takes about a minute.
 - English-language resumes only; parsing is heuristic and won't handle every layout.
 - No OCR: scanned PDFs are rejected with a clear message.
 - Rate limits are per worker until a shared cache is added.

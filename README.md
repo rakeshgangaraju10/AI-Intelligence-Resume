@@ -19,11 +19,16 @@ The "intelligence" is rule-based NLP: section detection, a skill dictionary with
 aliases, and related-skill groups. Scoring is a documented formula. No resume
 data is sent to any external AI service.
 
-> **Status:** All stages built and verified in CI on commit `c452832`: Backend CI #11
-> (201 tests, 97% coverage), Frontend CI #6 (32 tests), E2E #6 (full Playwright journey
-> in Chromium), Production stack #2 (Docker Compose stack: 13/13 smoke checks through
-> nginx, `check --deploy` without errors, SPA renders under the production CSP).
-> **Not deployed**: there is no public URL yet. See [docs/deployment.md](docs/deployment.md).
+**🌐 Live site: [careerforge-h362.onrender.com](https://careerforge-h362.onrender.com)**. It's hosted on free plans
+(Render + Neon), so the first visit after ~15 idle minutes takes about a minute to wake up.
+
+> **Status:** All stages verified in CI. Latest run on commit `4e0b3ce`: Backend CI #13
+> (206 tests, 96% coverage), E2E #8 (full Playwright journey in Chromium), and Production
+> stack #4 (Docker Compose stack 13/13 smoke checks; the single-container image used in
+> production built, ran and passed 11/11 checks plus a Chromium CSP check). Frontend CI #7
+> (34 tests) ran on the previous commit; the latest commit didn't touch the frontend.
+> Deployed on Render's free web service with a Neon Postgres database
+> ([how](docs/deploy-free-render-neon.md)).
 
 ## Screenshots
 
