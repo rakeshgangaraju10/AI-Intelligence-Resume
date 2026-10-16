@@ -245,3 +245,9 @@ offer its source to the service's users.
 - [docs/matching-algorithm.md](docs/matching-algorithm.md) — scoring formula, worked example, limitations
 - [docs/deployment.md](docs/deployment.md) — production stack, HTTPS, backups, checklist
 - [docs/project-summary.md](docs/project-summary.md) — resume bullets and interview talking points
+
+## Acknowledgements
+
+- **[Hamsa B M](https://github.com/hamsabm10)** tested the live site on mobile and reported
+  the "Can't reach the server" upload failure. That report led to the wake-up and automatic
+  retry handling for the free-hosting server.
