@@ -1,0 +1,33 @@
+# Render Blueprint: one free web service running deploy/render/Dockerfile.
+# The database is a free Neon Postgres (no card needed): paste its connection
+# string into DATABASE_URL when Render asks. Guide: docs/deploy-free-render-neon.md
+services:
+  - type: web
+    name: careerforge
+    runtime: docker
+    plan: free
+    region: singapore        # closest Render region to India
+    dockerfilePath: ./deploy/render/Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false            # Render asks for it: paste the Neon connection string
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://*.onrender.com
+      - key: DRF_NUM_PROXIES
+        value: "1"
+      - key: GUNICORN_WORKERS
+        value: "2"
+      - key: RESUME_STORE_FILES
+        value: "false"         # free services have no persistent disk
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false            # optional: your admin login email
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false            # optional: a strong admin password
+      - key: DJANGO_SUPERUSER_FULL_NAME
+        sync: false            # optional: your name

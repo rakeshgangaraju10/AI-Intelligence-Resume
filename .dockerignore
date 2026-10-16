@@ -1,0 +1,18 @@
+# Build context for deploy/render/Dockerfile (repository root)
+.git/
+**/node_modules/
+**/__pycache__/
+**/*.pyc
+frontend/dist/
+frontend/e2e/.generated/
+frontend/test-results/
+frontend/playwright-report/
+backend/private_media/
+backend/staticfiles/
+backend/.venv/
+.env
+.env.*
+!.env.example
+!.env.production.example
+*.sql.gz
+*.dump

@@ -80,3 +80,45 @@ def test_static_files_are_world_readable_but_uploads_stay_private(settings):
     # ...while the global upload modes stay private.
     assert settings.FILE_UPLOAD_PERMISSIONS == 0o600
     assert settings.FILE_UPLOAD_DIRECTORY_PERMISSIONS == 0o700
+
+
+# --- Single-service deployment: Django serves the built React app -------------------
+
+
+@pytest.mark.django_db
+class TestSpaFallback:
+    def test_not_served_when_unconfigured(self, api_client, settings):
+        settings.SPA_DIST_DIR = ""
+        assert api_client.get("/dashboard").status_code == 404
+
+    def test_client_routes_get_index_with_csp(self, api_client, settings, tmp_path):
+        (tmp_path / "index.html").write_text('<!doctype html><div id="root"></div>')
+        settings.SPA_DIST_DIR = str(tmp_path)
+        for path in ["/", "/dashboard", "/analyses/7", "/analyses/compare"]:
+            response = api_client.get(path)
+            assert response.status_code == 200, path
+            assert b'<div id="root">' in response.content
+            assert response["Content-Security-Policy"].startswith("default-src 'self'")
+            assert response["Cache-Control"] == "no-cache"
+
+    def test_api_admin_and_static_never_fall_through(self, api_client, settings, tmp_path):
+        (tmp_path / "index.html").write_text("<div id=root></div>")
+        settings.SPA_DIST_DIR = str(tmp_path)
+        response = api_client.get("/api/v1/does-not-exist/")
+        assert response.status_code == 404
+        assert b"<div" not in response.content
+        assert api_client.get("/static/nope.css").status_code == 404
+        assert api_client.get("/admin").status_code == 301  # APPEND_SLASH redirect, not the SPA
+
+
+def test_single_service_settings_module():
+    import importlib
+
+    mod = importlib.import_module("config.settings.single_service")
+    mw = mod.MIDDLEWARE
+    assert mw.index("whitenoise.middleware.WhiteNoiseMiddleware") == mw.index(
+        "apps.core.middleware.SecurityHeadersMiddleware"
+    ) + 1
+    assert mod.RESUME_STORE_FILES is False
+    assert mod.DEBUG is False
+    assert importlib.import_module("whitenoise.middleware")  # dependency installed

@@ -111,6 +111,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+# Single-service deployments serve the built React app from Django. Points at the
+# Vite build output (index.html + assets/); empty = the SPA is served elsewhere (nginx/Vite).
+SPA_DIST_DIR = env("SPA_DIST_DIR", default="")
+
 # Static files (admin/Swagger CSS and JS) are public and are served by nginx,
 # which runs as a different user. Give them world-readable modes explicitly:
 # otherwise they inherit the private FILE_UPLOAD_* modes below (0600/0700).
@@ -133,6 +137,10 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 2_621_440
 FILE_UPLOAD_PERMISSIONS = 0o600
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
 
+# Keep the uploaded PDF after its text is extracted? Parsing and re-parsing use
+# the stored text only, so hosts without persistent disks (and privacy-minded
+# deployments) can set this to False and store no PDF at all.
+RESUME_STORE_FILES = env.bool("RESUME_STORE_FILES", default=True)
 RESUME_MAX_UPLOAD_BYTES = env.int("RESUME_MAX_UPLOAD_BYTES", default=5 * 1024 * 1024)
 RESUME_MAX_PAGES = env.int("RESUME_MAX_PAGES", default=20)
 RESUME_MIN_TEXT_CHARS = env.int("RESUME_MIN_TEXT_CHARS", default=50)

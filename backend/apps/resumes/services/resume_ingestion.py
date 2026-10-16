@@ -53,13 +53,15 @@ def create_resume(owner, inspected: InspectedResume, title: str | None = None) -
         status=Resume.Status.TEXT_EXTRACTED,
         extracted_text=inspected.extraction.text,
     )
-    # The name passed here is ignored by resume_upload_path (server-generated name).
-    resume.file.save("upload.pdf", ContentFile(inspected.data), save=False)
+    if settings.RESUME_STORE_FILES:
+        # The name passed here is ignored by resume_upload_path (server-generated name).
+        resume.file.save("upload.pdf", ContentFile(inspected.data), save=False)
     try:
         with transaction.atomic():
             resume.save()
     except Exception:
-        resume.file.storage.delete(resume.file.name)
+        if resume.file:
+            resume.file.storage.delete(resume.file.name)
         raise
     # Log identifiers and sizes only — never resume text or filenames.
     logger.info(

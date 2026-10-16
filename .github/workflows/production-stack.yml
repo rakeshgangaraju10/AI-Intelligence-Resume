@@ -139,3 +139,103 @@ jobs:
       - name: Stop the stack
         if: always()
         run: docker compose -f docker-compose.prod.yml --env-file .env.production down -v
+
+  # The single-container image used for free hosting (render.yaml). Built and run
+  # here exactly as Render will run it, against a throwaway Postgres.
+  single-service-image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: careerforge
+          POSTGRES_USER: careerforge
+          POSTGRES_PASSWORD: careerforge
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U careerforge"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build deploy/render/Dockerfile
+        id: build
+        run: |
+          set -o pipefail
+          docker build -f deploy/render/Dockerfile -t careerforge-single . 2>&1 | tail -n 30 | tee build-output.txt
+
+      - name: Start the container
+        id: run
+        run: |
+          docker run -d --name app --network host \
+            -e PORT=8000 \
+            -e DATABASE_URL=postgres://careerforge:careerforge@localhost:5432/careerforge \
+            -e DJANGO_SECRET_KEY=ci-only-$(python3 -c 'import secrets; print(secrets.token_hex(16))') \
+            -e DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1 \
+            -e DJANGO_SECURE_SSL_REDIRECT=False \
+            -e DJANGO_SUPERUSER_EMAIL=admin@example.com \
+            -e DJANGO_SUPERUSER_PASSWORD=ci-$(python3 -c 'import secrets; print(secrets.token_hex(12))') \
+            -e DJANGO_SUPERUSER_FULL_NAME="CI Admin" \
+            careerforge-single
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8000/api/v1/health/ >/dev/null 2>&1 && { echo "ready after $i tries"; exit 0; }
+            sleep 2
+          done
+          docker logs app | tail -n 50; exit 1
+
+      - name: Smoke checks
+        id: smoke
+        run: |
+          fail=0; : > single-smoke.txt
+          check() { local d="$1"; shift; if "$@" >/dev/null 2>&1; then echo "PASS  $d" | tee -a single-smoke.txt; else echo "FAIL  $d" | tee -a single-smoke.txt; fail=1; fi; }
+          b=http://localhost:8000
+          check "health ok"                         sh -c "curl -fsS $b/api/v1/health/ | grep -q '\"ok\"'"
+          check "SPA index at /"                    sh -c "curl -fsS $b/ | grep -q '<div id=\"root\">'"
+          check "client route served by SPA"        sh -c "curl -fsS $b/analyses/compare | grep -q '<div id=\"root\">'"
+          check "SPA CSP header"                    sh -c "curl -fsSI $b/dashboard | grep -qi \"^content-security-policy: default-src 'self'\""
+          check "built JS asset served, immutable"  sh -c "a=\$(curl -fsS $b/ | grep -o '/assets/[^\"]*\\.js' | head -n1) && curl -fsSI $b\$a | grep -qi 'immutable'"
+          check "admin static files served"         sh -c "curl -fsSI $b/static/admin/css/base.css | grep -q ' 200'"
+          check "admin login page"                  sh -c "curl -fsS $b/admin/login/ | grep -qi django"
+          check "API still JSON 404 (not SPA)"      sh -c "! curl -s $b/api/v1/nope/ | grep -q 'id=\"root\"'"
+          check "API requires login"                sh -c "test \$(curl -s -o /dev/null -w '%{http_code}' $b/api/v1/resumes/) = 403"
+          check "admin user created on start"       sh -c "docker logs app 2>&1 | grep -q 'Admin account created.'"
+          check "no PDF storage configured"         sh -c "docker exec app python -c 'from django.conf import settings; import django; django.setup(); assert settings.RESUME_STORE_FILES is False'"
+          exit $fail
+
+      - uses: actions/setup-node@v5
+        if: ${{ !cancelled() && steps.run.outcome == 'success' }}
+        with:
+          node-version: "22"
+
+      - name: Browser check (SPA renders under CSP)
+        id: browser
+        if: ${{ !cancelled() && steps.run.outcome == 'success' }}
+        working-directory: frontend
+        env:
+          PROD_BASE_URL: http://localhost:8000
+        run: |
+          set -o pipefail
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+          npx playwright test -c playwright.prod.config.ts 2>&1 | tee browser-output.txt
+
+      - name: Annotate results
+        if: always()
+        env:
+          BUILD: ${{ steps.build.outcome }}
+          RUN: ${{ steps.run.outcome }}
+          SMOKE: ${{ steps.smoke.outcome }}
+          BROWSER: ${{ steps.browser.outcome }}
+        run: |
+          esc() { sed -e 's/%/%25/g' | awk 'BEGIN{ORS="%0A"} {print}'; }
+          p=$(grep -c '^PASS' single-smoke.txt 2>/dev/null || true); f=$(grep -c '^FAIL' single-smoke.txt 2>/dev/null || true)
+          echo "::notice title=single-service image::build=${BUILD} run=${RUN} smoke=${p:-0} passed/${f:-0} failed browser=${BROWSER}"
+          [ "${f:-0}" != "0" ] && echo "::error title=single-service smoke failures::$(grep '^FAIL' single-smoke.txt | esc)" || true
+          if [ "${BUILD}" = "failure" ] && [ -s build-output.txt ]; then echo "::error title=build output::$(tail -n 25 build-output.txt | esc)"; fi
+          if [ "${RUN}" != "success" ] || [ "${SMOKE}" = "failure" ]; then echo "::error title=container logs::$(docker logs app 2>&1 | tail -n 40 | esc)"; fi

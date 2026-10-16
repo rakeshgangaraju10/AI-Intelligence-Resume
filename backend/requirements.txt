@@ -10,3 +10,4 @@ django-environ>=0.12,<0.13
 psycopg[binary]>=3.2,<3.3        # PostgreSQL driver (psycopg 3)
 PyMuPDF>=1.26,<1.27              # PDF text extraction (AGPL-3.0 – see README "Licensing")
 gunicorn>=23.0,<24.0
+whitenoise>=6.9,<7.0           # serves the built SPA in single-service deployments (Render)

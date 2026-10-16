@@ -7,7 +7,9 @@
 > `check --deploy`, and a Chromium page load under the production CSP. That run is
 > plain HTTP on a CI runner, not a public deployment.
 
-**Quickest path to a public HTTPS site:** [deploy-oracle-cloud.md](deploy-oracle-cloud.md)
+**Free, no card:** [deploy-free-render-neon.md](deploy-free-render-neon.md): Render's free web service plus Neon's free Postgres, as one container.
+
+**Own server:** [deploy-oracle-cloud.md](deploy-oracle-cloud.md)
 covers a free Oracle Cloud server, a DuckDNS domain, and Caddy for automatic HTTPS
 via `docker-compose.caddy.yml`.
 

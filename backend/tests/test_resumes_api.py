@@ -238,3 +238,24 @@ class TestReadAndDelete:
     def test_cannot_rename_another_users_resume(self, auth_client, other_client):
         resume_id = upload(auth_client).json()["id"]
         assert other_client.patch(detail_url(resume_id), {"title": "x"}, format="json").status_code == 404
+
+
+# --- Deployments that keep no PDF files (RESUME_STORE_FILES=False) ----------------
+
+
+def test_resume_without_stored_file_still_parses_reparses_and_deletes(auth_client, settings, tmp_path):
+    settings.RESUME_STORE_FILES = False
+    settings.PRIVATE_MEDIA_ROOT = tmp_path  # nothing may be written here
+    response = upload(auth_client)
+    assert response.status_code == 201, response.content
+    resume = Resume.objects.get(pk=response.json()["id"])
+    assert not resume.file
+    assert resume.extracted_text
+    assert not any(tmp_path.rglob("*.pdf"))
+
+    skills = auth_client.get(reverse("resume-skills-list", kwargs={"resume_pk": resume.pk})).json()
+    names = {s["name"] for s in (skills["results"] if isinstance(skills, dict) else skills)}
+    assert "Python" in names
+    assert auth_client.post(reverse("resume-reparse", kwargs={"pk": resume.pk})).status_code == 200
+    assert auth_client.delete(reverse("resume-detail", kwargs={"pk": resume.pk})).status_code == 204
+    assert not Resume.objects.filter(pk=resume.pk).exists()

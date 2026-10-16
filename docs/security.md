@@ -70,6 +70,15 @@ The SPA CSP doesn't cover `/admin/` or `/api/v1/docs/`: Django serves those
 pages and Swagger UI loads its assets from a CDN. Restrict admin/docs access by
 network in production if possible.
 
+## Single-service / free hosting
+
+`RESUME_STORE_FILES=False` (the default in `config/settings/single_service.py`)
+stores no PDF at all, only the extracted text needed for parsing and analysis.
+This means less personal data at rest. The SPA's `index.html` gets the same CSP
+from Django (`core.views.spa_index`) as nginx sends in the Compose setup. Both
+are tested (`test_core.py`, `test_resumes_api.py`) and smoke-tested on the built
+image in CI.
+
 ## Known gaps (tracked for later stages)
 
 - **Throttle storage**: LocMem cache is per process. Production with several
