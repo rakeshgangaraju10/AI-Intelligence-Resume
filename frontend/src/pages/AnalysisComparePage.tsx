@@ -46,11 +46,11 @@ function Side({ label, analysis }: { label: string; analysis: AnalysisDetail }) 
       <dl className="space-y-2 text-sm">
         <div className="flex justify-between gap-2">
           <dt className="text-slate-600">Resume</dt>
-          <dd className="font-medium text-slate-900">{analysis.resume_title}</dd>
+          <dd className="min-w-0 text-right font-medium text-slate-900">{analysis.resume_title}</dd>
         </div>
         <div className="flex justify-between gap-2">
           <dt className="text-slate-600">Analysed</dt>
-          <dd className="text-slate-900">{formatDateTime(analysis.created_at)}</dd>
+          <dd className="text-right text-slate-900">{formatDateTime(analysis.created_at)}</dd>
         </div>
         <div className="flex items-center justify-between gap-2">
           <dt className="text-slate-600">Score</dt>
@@ -134,9 +134,9 @@ export function AnalysisComparePage() {
       </div>
 
       <Card title="Skill by skill">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="text-xs uppercase text-slate-500">
+        <div className="md:overflow-x-auto">
+          <table className="block w-full text-left text-sm md:table">
+            <thead className="sr-only text-xs uppercase text-slate-500 md:not-sr-only md:table-header-group">
               <tr>
                 <th scope="col" className="py-2 pr-4 font-medium">Skill</th>
                 <th scope="col" className="py-2 pr-4 font-medium">A</th>
@@ -144,21 +144,21 @@ export function AnalysisComparePage() {
                 <th scope="col" className="py-2 font-medium">Change</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="block divide-y divide-slate-100 md:table-row-group">
               {data.skills.map((s) => {
                 const change = CHANGE_LABELS[s.change];
                 return (
-                  <tr key={s.skill_name}>
-                    <th scope="row" className="py-2 pr-4 font-medium text-slate-900">
+                  <tr key={s.skill_name} className="relative block py-3 md:table-row md:py-0">
+                    <th scope="row" className="block pr-28 font-medium text-slate-900 md:table-cell md:py-2 md:pr-4">
                       {s.skill_name}
                     </th>
-                    <td className="py-2 pr-4 text-slate-700">
+                    <td data-label="A:" className="block text-slate-700 md:table-cell md:py-2 md:pr-4 before:mr-1 before:text-xs before:font-medium before:text-slate-500 before:content-[attr(data-label)] md:before:content-none">
                       {s.status_a ? `${STATUS_LABELS[s.status_a]} (${s.kind_a})` : "—"}
                     </td>
-                    <td className="py-2 pr-4 text-slate-700">
+                    <td data-label="B:" className="block text-slate-700 md:table-cell md:py-2 md:pr-4 before:mr-1 before:text-xs before:font-medium before:text-slate-500 before:content-[attr(data-label)] md:before:content-none">
                       {s.status_b ? `${STATUS_LABELS[s.status_b]} (${s.kind_b})` : "—"}
                     </td>
-                    <td className="py-2">
+                    <td className="absolute right-0 top-3 md:static md:table-cell md:py-2">
                       <Badge tone={change.tone}>{change.label}</Badge>
                     </td>
                   </tr>

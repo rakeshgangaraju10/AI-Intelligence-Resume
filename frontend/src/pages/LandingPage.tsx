@@ -35,11 +35,11 @@ export function LandingPage() {
   return (
     <div>
       <section className="bg-white">
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center sm:py-24">
-          <h1 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+        <div className="mx-auto max-w-4xl px-4 py-12 text-center sm:py-24">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-5xl">
             See how your resume matches a job, <span className="text-indigo-700">and why</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
+          <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600 sm:text-lg">
             CareerForge extracts the skills and experience in your resume, compares them with a job description, and explains
             every result with evidence from your own resume.
           </p>
@@ -58,7 +58,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section aria-labelledby="features" className="mx-auto max-w-6xl px-4 py-16">
+      <section aria-labelledby="features" className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
         <h2 id="features" className="text-center text-2xl font-bold text-slate-900">
           What it does
         </h2>

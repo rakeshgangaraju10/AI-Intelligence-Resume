@@ -50,8 +50,8 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
   }
 
   return (
-    <tr className="align-top">
-      <td className="py-3 pr-3">
+    <tr className="grid grid-cols-2 gap-x-3 gap-y-2 py-3 align-top md:table-row md:py-0">
+      <td className="col-span-2 block md:table-cell md:py-3 md:pr-3">
         <div className="font-medium text-slate-900">{req.name}</div>
         <div className="mt-1 flex flex-wrap gap-1">
           {req.source === "extracted" ? <Badge tone="amber">Suggested</Badge> : <Badge tone="sky">Added by you</Badge>}
@@ -64,7 +64,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
         )}
         {error && <p className="mt-1 text-xs text-red-700">{error}</p>}
       </td>
-      <td className="py-3 pr-3">
+      <td className="block md:table-cell md:py-3 md:pr-3">
         <label className="sr-only" htmlFor={`kind-${req.id}`}>
           Importance of {req.name}
         </label>
@@ -73,7 +73,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
           value={req.kind}
           disabled={busy}
           onChange={(e) => change({ kind: e.target.value as RequirementKind })}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+          className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-base sm:w-auto sm:py-1 sm:text-sm"
         >
           {KIND_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -82,7 +82,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
           ))}
         </select>
       </td>
-      <td className="py-3 pr-3">
+      <td className="block md:table-cell md:py-3 md:pr-3">
         <label className="sr-only" htmlFor={`weight-${req.id}`}>
           Weight of {req.name}
         </label>
@@ -91,7 +91,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
           value={String(req.weight)}
           disabled={busy}
           onChange={(e) => change({ weight: Number(e.target.value) })}
-          className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm"
+          className="w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-base sm:w-auto sm:py-1 sm:text-sm"
         >
           {WEIGHT_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
@@ -100,7 +100,7 @@ function RequirementRow({ jobId, req, onSaved, onDeleted }: { jobId: number; req
           ))}
         </select>
       </td>
-      <td className="py-3 text-right">
+      <td className="col-span-2 block md:table-cell md:py-3 md:text-right">
         <Button size="sm" variant="ghost" onClick={remove} disabled={busy} aria-label={`Remove ${req.name}`}>
           Remove
         </Button>
@@ -337,9 +337,9 @@ export function JobDetailPage() {
             {job.requirements.length === 0 ? (
               <p className="text-sm text-slate-600">No skills yet. Add the skills this job asks for.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="text-xs uppercase text-slate-500">
+              <div className="md:overflow-x-auto">
+                <table className="block w-full text-left text-sm md:table">
+                  <thead className="sr-only text-xs uppercase text-slate-500 md:not-sr-only md:table-header-group">
                     <tr>
                       <th scope="col" className="pb-2 pr-3 font-medium">Skill</th>
                       <th scope="col" className="pb-2 pr-3 font-medium">Importance</th>
@@ -347,7 +347,7 @@ export function JobDetailPage() {
                       <th scope="col" className="pb-2 font-medium"><span className="sr-only">Actions</span></th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="block divide-y divide-slate-100 md:table-row-group">
                     {job.requirements.map((req) => (
                       <RequirementRow
                         key={req.id}

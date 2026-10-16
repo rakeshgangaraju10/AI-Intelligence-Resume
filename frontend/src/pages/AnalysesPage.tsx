@@ -74,7 +74,7 @@ export function AnalysesPage() {
             }}
           />
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm text-slate-600" aria-live="polite">
             {selected.length === 2 ? "2 analyses selected" : "Select two analyses to compare"}
           </p>
@@ -98,9 +98,10 @@ export function AnalysesPage() {
         </EmptyState>
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm md:overflow-x-auto">
+            {/* On phones each row is shown as a card; from md up it is a normal table. */}
+            <table className="block w-full text-left text-sm md:table">
+              <thead className="sr-only bg-slate-50 text-xs uppercase text-slate-500 md:not-sr-only md:table-header-group">
                 <tr>
                   <th scope="col" className="px-4 py-3">
                     <span className="sr-only">Select for comparison</span>
@@ -116,10 +117,10 @@ export function AnalysesPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="block divide-y divide-slate-100 md:table-row-group">
                 {data.results.map((a) => (
-                  <tr key={a.id} className={selected.includes(a.id) ? "bg-indigo-50" : undefined}>
-                    <td className="px-4 py-3">
+                  <tr key={a.id} className={`relative block px-4 py-3 md:table-row md:p-0 ${selected.includes(a.id) ? "bg-indigo-50" : ""}`}>
+                    <td className="absolute right-4 top-4 md:static md:table-cell md:px-4 md:py-3">
                       <input
                         type="checkbox"
                         className="h-4 w-4 rounded border-slate-300 text-indigo-700 focus:ring-indigo-600"
@@ -129,23 +130,23 @@ export function AnalysesPage() {
                         aria-label={`Select ${a.job_title} (${a.resume_title}, ${formatDateTime(a.created_at)}) for comparison`}
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="block pb-1 pr-8 md:table-cell md:px-4 md:py-3">
                       <Link to={`/analyses/${a.id}`} className="font-medium text-indigo-800 underline-offset-2 hover:underline">
                         {a.job_title}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{a.resume_title}</td>
-                    <td className="px-4 py-3">
+                    <td data-label="Resume:" className="block px-0 py-0.5 md:table-cell md:px-4 md:py-3 text-slate-700 before:mr-1 before:text-xs before:font-medium before:text-slate-500 before:content-[attr(data-label)] md:before:content-none">{a.resume_title}</td>
+                    <td data-label="Score:" className="block px-0 py-0.5 md:table-cell md:px-4 md:py-3 before:mr-1 before:text-xs before:font-medium before:text-slate-500 before:content-[attr(data-label)] md:before:content-none">
                       <ScoreBadge score={a.score} />
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{formatPercent(a.required_coverage)}</td>
-                    <td className="whitespace-nowrap px-4 py-3">
+                    <td data-label="Required coverage:" className="block px-0 py-0.5 md:table-cell md:px-4 md:py-3 text-slate-700 before:mr-1 before:text-xs before:font-medium before:text-slate-500 before:content-[attr(data-label)] md:before:content-none">{formatPercent(a.required_coverage)}</td>
+                    <td className="block px-0 py-0.5 md:table-cell md:px-4 md:py-3 md:whitespace-nowrap">
                       <span className="font-medium text-emerald-700">{a.matched_count} matched</span>
                       <span className="text-slate-400"> · </span>
                       <span className="font-medium text-red-700">{a.missing_count} missing</span>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{formatDateTime(a.created_at)}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="block px-0 py-0.5 md:table-cell md:px-4 md:py-3 text-xs text-slate-500 md:text-sm">{formatDateTime(a.created_at)}</td>
+                    <td className="block pt-1 md:table-cell md:px-4 md:py-3 md:text-right">
                       <Button size="sm" variant="ghost" onClick={() => handleDelete(a.id)} aria-label={`Delete analysis for ${a.job_title}`}>
                         Delete
                       </Button>

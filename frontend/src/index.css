@@ -2,6 +2,17 @@
 
 /* Visible focus for keyboard users on every interactive element. */
 @layer base {
+  html {
+    /* Stop phones from enlarging text on rotate. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    /* Long words, emails and links wrap instead of widening the page on phones. */
+    overflow-wrap: break-word;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-indigo-600);
     outline-offset: 2px;

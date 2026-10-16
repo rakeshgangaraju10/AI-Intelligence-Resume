@@ -92,7 +92,7 @@ export function AnalysisDetailPage() {
           </>
         }
         actions={
-          <div className="flex flex-wrap gap-2 print:hidden">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap print:hidden">
             <LinkButton to={`/jobs/${analysis.job}?resume=${analysis.resume}`} variant="secondary">
               Re-run with edits
             </LinkButton>
@@ -122,7 +122,7 @@ export function AnalysisDetailPage() {
           </div>
           <div className="space-y-4 md:col-span-2">
             <div>
-              <div className="mb-1 flex justify-between gap-2 text-sm">
+              <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-sm">
                 <span className="font-medium text-slate-800">Required skills</span>
                 <span className="text-slate-600">
                   {formatPercent(analysis.required_coverage)} ({analysis.breakdown.required.matched_weight}/
@@ -132,7 +132,7 @@ export function AnalysisDetailPage() {
               <ProgressBar value={analysis.required_coverage ?? 0} label="Required skill coverage" />
             </div>
             <div>
-              <div className="mb-1 flex justify-between gap-2 text-sm">
+              <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-sm">
                 <span className="font-medium text-slate-800">Preferred skills</span>
                 <span className="text-slate-600">
                   {formatPercent(analysis.preferred_coverage)} ({analysis.breakdown.preferred.matched_weight}/
@@ -145,7 +145,7 @@ export function AnalysisDetailPage() {
               <summary className="cursor-pointer font-medium text-indigo-700">How this score was calculated</summary>
               <div className="mt-2 space-y-1 text-slate-700">
                 <p>
-                  Score = <code className="rounded bg-slate-100 px-1">{analysis.breakdown.formula}</code>
+                  Score = <code className="rounded bg-slate-100 px-1 [overflow-wrap:anywhere]">{analysis.breakdown.formula}</code>
                 </p>
                 <p>
                   Coverage is the weighted share of the job's skills found in your resume. Related skills are shown for context

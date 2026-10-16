@@ -89,7 +89,7 @@ export function AppLayout() {
           </nav>
         )}
       </header>
-      <main id="main" className="mx-auto max-w-6xl px-4 py-8">
+      <main id="main" className="mx-auto max-w-6xl px-4 py-6 sm:py-8">
         <Outlet />
       </main>
     </div>

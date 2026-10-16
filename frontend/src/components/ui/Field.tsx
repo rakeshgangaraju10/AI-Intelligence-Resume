@@ -32,7 +32,7 @@ function FieldShell({ id, label, error, hint, required, children }: FieldShellPr
 }
 
 const CONTROL =
-  "block w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100";
+  "block w-full rounded-md border bg-white px-3 py-2 text-base text-slate-900 shadow-sm sm:text-sm placeholder:text-slate-400 focus:border-indigo-600 focus:outline-none focus:ring-1 focus:ring-indigo-600 disabled:bg-slate-100";
 
 function controlClass(error?: string): string {
   return `${CONTROL} ${error ? "border-red-500" : "border-slate-300"}`;
